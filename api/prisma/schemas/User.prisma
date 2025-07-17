@@ -1,0 +1,11 @@
+model User {
+    id             Int           @id @default(autoincrement())
+    username       String        @unique()
+    password       String
+    participations Participant[]
+    quizes         Quiz[]
+    sessions       Session[]
+    // Data tracking fields
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime?     @updatedAt
+}

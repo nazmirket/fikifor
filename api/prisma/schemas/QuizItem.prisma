@@ -1,0 +1,15 @@
+model QuizItem {
+    id        Int            @id @default(autoincrement())
+    title     String?
+    imageId   Int?           @unique
+    image     Image?         @relation(fields: [imageId], references: [id])
+    quizId    Int
+    quiz      Quiz           @relation(fields: [quizId], references: [id])
+    favorites Session[]
+    match1    SessionMatch[] @relation("Match1")
+    match2    SessionMatch[] @relation("Match2")
+    votes     SessionVote[]
+    // Data tracking fields
+    createdAt DateTime       @default(now())
+    updatedAt DateTime?      @updatedAt
+}

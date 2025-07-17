@@ -1,0 +1,17 @@
+{
+	"rootDir": "./",
+	"extends": "@tsconfig/node20/tsconfig.json",
+
+	"compilerOptions": {
+		"outDir": "build",
+		"resolveJsonModule": true,
+		"esModuleInterop": true,
+		"moduleResolution": "node",
+		"typeRoots": ["./node_modules/@types", "./types", "./documents/contexts"],
+		"module": "commonjs",
+		"lib": ["es2020", "esnext.asynciterable"]
+	},
+
+	"include": ["./**/*.ts", "./**/*.js", "./**/*.json"],
+	"exclude": ["node_modules", "build", "seeder/**/*.json"]
+}

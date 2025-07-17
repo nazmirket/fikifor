@@ -1,0 +1,132 @@
+generator client {
+        provider = "prisma-client-js"
+}
+
+datasource db {
+        provider = "postgresql"
+        url      = env("DATABASE_URL")
+}
+model Image {
+    id        Int       @id @default(autoincrement())
+    name      String    @unique
+    folder    String
+    cover     Quiz?
+    item      QuizItem?
+    // Data tracking fields
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+}
+
+model Participant {
+    id        Int           @id @default(autoincrement())
+    userId    Int
+    user      User          @relation(fields: [userId], references: [id])
+    sessionId Int
+    session   Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    online    Boolean       @default(false)
+    votes     SessionVote[]
+    // Data tracking fields
+    createdAt DateTime      @default(now())
+    updatedAt DateTime?     @updatedAt
+
+    @@unique([userId, sessionId])
+}
+
+model Quiz {
+    id          Int        @id @default(autoincrement())
+    ownerId     Int
+    owner       User       @relation(fields: [ownerId], references: [id])
+    title       String
+    coverId     Int        @unique
+    cover       Image      @relation(fields: [coverId], references: [id])
+    description String
+    size        Int        @default(64) // 32, 64, 128
+    published   Boolean    @default(false)
+    items       QuizItem[]
+    sessions    Session[]
+    // Data tracking fields
+    createdAt   DateTime   @default(now())
+    updatedAt   DateTime?  @updatedAt
+}
+
+model QuizItem {
+    id        Int            @id @default(autoincrement())
+    title     String?
+    imageId   Int?           @unique
+    image     Image?         @relation(fields: [imageId], references: [id])
+    quizId    Int
+    quiz      Quiz           @relation(fields: [quizId], references: [id])
+    favorites Session[]
+    match1    SessionMatch[] @relation("Match1")
+    match2    SessionMatch[] @relation("Match2")
+    votes     SessionVote[]
+    // Data tracking fields
+    createdAt DateTime       @default(now())
+    updatedAt DateTime?      @updatedAt
+}
+
+model Session {
+    id           Int            @id @default(autoincrement())
+    code         String         @unique
+    quizId       Int
+    quiz         Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+    adminId      Int
+    admin        User           @relation(fields: [adminId], references: [id])
+    participants Participant[]
+    matches      SessionMatch[]
+    started      Boolean        @default(false)
+    ended        Boolean        @default(false)
+    cluster      Int
+    favoriteId   Int?
+    favorite     QuizItem?      @relation(fields: [favoriteId], references: [id])
+    // Data tracking fields
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime?      @updatedAt
+}
+
+model SessionMatch {
+    id           Int           @id @default(autoincrement())
+    sessionId    Int
+    session      Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    cluster      Int
+    order        Int
+    completed    Boolean       @default(false)
+    firstItemId  Int
+    firstItem    QuizItem      @relation("Match1", fields: [firstItemId], references: [id])
+    secondItemId Int
+    secondItem   QuizItem      @relation("Match2", fields: [secondItemId], references: [id])
+    votes        SessionVote[]
+    // Data tracking fields
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime?     @updatedAt
+
+    @@unique([sessionId, order, cluster])
+}
+
+model SessionVote {
+    id            Int          @id @default(autoincrement())
+    matchId       Int
+    match         SessionMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+    participantId Int
+    participant   Participant  @relation(fields: [participantId], references: [id])
+    selectionId   Int
+    selection     QuizItem     @relation(fields: [selectionId], references: [id])
+    // Data tracking fields
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime?    @updatedAt
+
+    @@unique([matchId, participantId])
+}
+
+model User {
+    id             Int           @id @default(autoincrement())
+    username       String        @unique()
+    password       String
+    participations Participant[]
+    quizes         Quiz[]
+    sessions       Session[]
+    // Data tracking fields
+    createdAt      DateTime      @default(now())
+    updatedAt      DateTime?     @updatedAt
+}
+

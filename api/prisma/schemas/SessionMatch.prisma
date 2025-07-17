@@ -1,0 +1,18 @@
+model SessionMatch {
+    id           Int           @id @default(autoincrement())
+    sessionId    Int
+    session      Session       @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+    cluster      Int
+    order        Int
+    completed    Boolean       @default(false)
+    firstItemId  Int
+    firstItem    QuizItem      @relation("Match1", fields: [firstItemId], references: [id])
+    secondItemId Int
+    secondItem   QuizItem      @relation("Match2", fields: [secondItemId], references: [id])
+    votes        SessionVote[]
+    // Data tracking fields
+    createdAt    DateTime      @default(now())
+    updatedAt    DateTime?     @updatedAt
+
+    @@unique([sessionId, order, cluster])
+}

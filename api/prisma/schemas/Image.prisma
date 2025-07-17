@@ -1,0 +1,10 @@
+model Image {
+    id        Int       @id @default(autoincrement())
+    name      String    @unique
+    folder    String
+    cover     Quiz?
+    item      QuizItem?
+    // Data tracking fields
+    createdAt DateTime  @default(now())
+    updatedAt DateTime? @updatedAt
+}

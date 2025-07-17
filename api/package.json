@@ -1,0 +1,56 @@
+{
+	"name": "fikifor-api",
+	"version": "1.0.0",
+	"scripts": {
+		"preinstall": "npx only-allow pnpm",
+		"lint": "eslint --fix --ignore-path .gitignore .",
+		"build": "rimraf ./build && tsc --project tsconfig.build.json",
+		"start": "pnpm build && pm2 start ecosystem.config.js",
+		"db:build": "pnpm ts-node prisma/build.ts",
+		"dev": "pnpm ts-node server.ts --watch",
+		"dev:ws": "pnpm ts-node ws/server.ts"
+	},
+	"author": "nazmirket",
+	"devDependencies": {
+		"@tsconfig/node20": "^20.1.4",
+		"@types/bcryptjs": "^2.4.6",
+		"@types/cors": "^2.8.17",
+		"@types/express": "^4.17.21",
+		"@types/jsonwebtoken": "^9.0.7",
+		"@types/lodash": "^4.17.11",
+		"@types/multer": "^1.4.12",
+		"@types/node": "^18.19.42",
+		"@types/pg": "^8.11.11",
+		"@types/uuid": "^10.0.0",
+		"eslint": "^9.12.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-n": "^17.11.1",
+		"eslint-plugin-prettier": "^5.2.1",
+		"prettier": "^3.3.3",
+		"prettier-plugin-prisma": "^5.0.0",
+		"prisma": "^5.21.1",
+		"rimraf": "^6.0.1",
+		"ts-node": "^10.9.2",
+		"typescript": "^5.6.3"
+	},
+	"dependencies": {
+		"@prisma/client": "^5.21.1",
+		"axios": "^1.7.9",
+		"bcryptjs": "^2.4.3",
+		"cors": "^2.8.5",
+		"date-fns": "3.6.0",
+		"dotenv": "^16.4.5",
+		"express": "^4.21.1",
+		"jsonwebtoken": "^9.0.2",
+		"lodash": "4.17.21",
+		"multer": "1.4.5-lts.1",
+		"pg": "^8.13.1",
+		"sharp": "^0.33.5",
+		"socket.io": "^4.8.0",
+		"uuid": "^10.0.0"
+	},
+	"engines": {
+		"node": ">=20.0.0",
+		"pnpm": ">=8.0.0"
+	}
+}

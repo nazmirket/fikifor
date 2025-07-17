@@ -1,0 +1,28 @@
+# Dependencies
+node_modules
+
+# Logs
+*.log
+
+# Environment files
+.env
+env.prod.ts
+
+# Build outputs
+build
+dist
+.output
+
+# Development directories
+dev
+.nuxt
+.nitro
+.cache
+_temp
+
+# IDE/Editor
+.vscode
+.DS_Store
+
+# Project specific
+api/files/*

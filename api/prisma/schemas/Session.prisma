@@ -1,0 +1,18 @@
+model Session {
+    id           Int            @id @default(autoincrement())
+    code         String         @unique
+    quizId       Int
+    quiz         Quiz           @relation(fields: [quizId], references: [id], onDelete: Cascade)
+    adminId      Int
+    admin        User           @relation(fields: [adminId], references: [id])
+    participants Participant[]
+    matches      SessionMatch[]
+    started      Boolean        @default(false)
+    ended        Boolean        @default(false)
+    cluster      Int
+    favoriteId   Int?
+    favorite     QuizItem?      @relation(fields: [favoriteId], references: [id])
+    // Data tracking fields
+    createdAt    DateTime       @default(now())
+    updatedAt    DateTime?      @updatedAt
+}

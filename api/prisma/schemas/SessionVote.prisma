@@ -1,0 +1,14 @@
+model SessionVote {
+    id            Int          @id @default(autoincrement())
+    matchId       Int
+    match         SessionMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+    participantId Int
+    participant   Participant  @relation(fields: [participantId], references: [id])
+    selectionId   Int
+    selection     QuizItem     @relation(fields: [selectionId], references: [id])
+    // Data tracking fields
+    createdAt     DateTime     @default(now())
+    updatedAt     DateTime?    @updatedAt
+
+    @@unique([matchId, participantId])
+}
