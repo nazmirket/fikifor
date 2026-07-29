@@ -1,0 +1,25 @@
+{
+	"name": "@fikifor/contracts",
+	"version": "1.0.0",
+	"private": true,
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"files": [
+		"dist"
+	],
+	"scripts": {
+		"build": "rimraf dist && tsc -p tsconfig.json",
+		"lint": "eslint src --max-warnings=0",
+		"prepare": "pnpm build",
+		"test": "vitest run --passWithNoTests",
+		"typecheck": "tsc --noEmit -p tsconfig.json"
+	},
+	"dependencies": {
+		"zod": "^4.3.6"
+	},
+	"devDependencies": {
+		"rimraf": "^6.0.1",
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.10"
+	}
+}

@@ -19,10 +19,12 @@ dev
 .nitro
 .cache
 _temp
+coverage
 
 # IDE/Editor
 .vscode
 .DS_Store
 
 # Project specific
-api/files/*
+apps/api/files/*
+!apps/api/files/.gitkeep

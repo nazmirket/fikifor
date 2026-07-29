@@ -1,0 +1,54 @@
+{
+	"name": "fikifor",
+	"author": "nazmirket",
+	"private": true,
+	"packageManager": "pnpm@10.33.0",
+	"workspaces": [
+		"apps/*",
+		"packages/*"
+	],
+	"scripts": {
+		"dev:api": "pnpm --filter @fikifor/api dev",
+		"dev:socket": "pnpm --filter @fikifor/api dev:socket",
+		"dev:web": "pnpm --filter @fikifor/web dev",
+		"build": "pnpm -r build",
+		"lint": "pnpm -r lint && pnpm format:check",
+		"format": "prettier --write \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs \"deploy/*.{yml,md}\" docker-compose.yml",
+		"format:check": "prettier --check \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs \"deploy/*.{yml,md}\" docker-compose.yml",
+		"test": "pnpm -r test",
+		"typecheck": "pnpm -r typecheck",
+		"db:build": "pnpm --filter @fikifor/api db:build",
+		"db:migrate": "pnpm --filter @fikifor/api db:migrate",
+		"db:deploy": "pnpm --filter @fikifor/api db:deploy",
+		"docker:up": "docker compose up -d --build",
+		"docker:down": "docker compose down",
+		"docker:logs": "docker compose logs -f"
+	},
+	"devDependencies": {
+		"@eslint/js": "^10.0.1",
+		"eslint": "^10.8.0",
+		"eslint-config-prettier": "^10.1.8",
+		"eslint-plugin-vue": "^10.4.0",
+		"globals": "^17.8.0",
+		"prettier": "^3.6.2",
+		"typescript-eslint": "^8.39.0",
+		"vue-eslint-parser": "^10.4.1"
+	},
+	"pnpm": {
+		"peerDependencyRules": {
+			"allowedVersions": {
+				"@emnapi/core": "1",
+				"@emnapi/runtime": "1",
+				"@nuxt/schema": "3"
+			}
+		},
+		"onlyBuiltDependencies": [
+			"@prisma/client",
+			"@prisma/engines",
+			"esbuild",
+			"prisma",
+			"sharp",
+			"unrs-resolver"
+		]
+	}
+}

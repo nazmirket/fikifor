@@ -1,0 +1,32 @@
+{
+	"name": "@fikifor/web",
+	"private": true,
+	"scripts": {
+		"build": "nuxt build",
+		"dev": "nuxt dev",
+		"generate": "nuxt generate",
+		"postinstall": "nuxt prepare",
+		"preview": "nuxt preview",
+		"lint": "eslint . --max-warnings=0",
+		"test": "vitest run --passWithNoTests",
+		"typecheck": "nuxt typecheck"
+	},
+	"devDependencies": {
+		"@nuxt/ui": "^2.22.3",
+		"@types/node": "^20.19.17",
+		"nuxt": "^3.20.2",
+		"prettier": "^3.4.2",
+		"prettier-plugin-tailwindcss": "^0.8.1",
+		"typescript": "^5.9.3",
+		"vitest": "^4.1.10",
+		"vue-tsc": "^3.0.8"
+	},
+	"dependencies": {
+		"@fikifor/contracts": "workspace:*",
+		"@pinia/nuxt": "^0.11.3",
+		"ofetch": "^1.5.1",
+		"pinia": "^3.0.4",
+		"pinia-plugin-persistedstate": "^4.7.1",
+		"socket.io-client": "^4.8.1"
+	}
+}
