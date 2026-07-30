@@ -199,7 +199,10 @@ export interface QuizLeaderboardEntry {
 	rank: number
 	item: QuizItem
 	sessionWins: number
+	averageRank: number
 	weightedScore: number
+	scorePercentage: number
+	/** @deprecated Use scorePercentage. */
 	share: number
 }
 

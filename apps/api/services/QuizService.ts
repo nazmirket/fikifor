@@ -37,6 +37,9 @@ interface QuizLeaderboardRow {
 	imageFolder: string | null
 	sessionWins: number
 	weightedScore: number
+	weightedPlacement: number
+	completedSessions: number
+	participantWeight: number
 }
 
 function publicQuizOrder(query: PublicQuizQuery) {
@@ -417,8 +420,9 @@ export async function getQuizes(query: PublicQuizQuery) {
 	}
 }
 
-// Rank completed-session favorites. A session contributes one point per participant
-// to its winning item, so larger rooms carry proportionally more weight.
+// Rank every item by the round in which it was eliminated. Standard competition
+// placements are used (1, 2, 3, 3, 5...), converted to points, and multiplied by
+// the session's participant count so larger rooms carry proportionally more weight.
 export async function getQuizLeaderboard(
 	quizId: number,
 	userId?: number,
@@ -428,39 +432,98 @@ export async function getQuizLeaderboard(
 			id: quizId,
 			OR: [...(userId ? [{ ownerId: userId }] : []), { published: true }],
 		},
-		select: { id: true },
+		select: { id: true, size: true },
 	})
 	if (!quiz) throw notFound('Quiz not found')
 
 	const rows = await Prisma.$queryRaw<QuizLeaderboardRow[]>(PrismaQuery.sql`
-		SELECT
-			qi."id" AS "itemId",
-			qi."title" AS "itemTitle",
-			i."id" AS "imageId",
-			i."name" AS "imageName",
-			i."folder" AS "imageFolder",
-			COUNT(s."id")::integer AS "sessionWins",
-			SUM(participants."count")::integer AS "weightedScore"
-		FROM "Session" s
-		INNER JOIN "QuizItem" qi
-			ON qi."id" = s."favoriteId"
-			AND qi."quizId" = ${quizId}
-		LEFT JOIN "Image" i ON i."id" = qi."imageId"
-		INNER JOIN LATERAL (
-			SELECT COUNT(*)::integer AS "count"
-			FROM "Participant" p
-			WHERE p."sessionId" = s."id"
-		) participants ON true
-		WHERE
-			s."quizId" = ${quizId}
-			AND s."ended" = true
-			AND s."favoriteId" IS NOT NULL
-		GROUP BY qi."id", i."id"
-		ORDER BY "weightedScore" DESC, "sessionWins" DESC, LOWER(qi."title") ASC NULLS LAST, qi."id" ASC
+		WITH "completedSessions" AS (
+			SELECT
+				s."id",
+				s."favoriteId",
+				COUNT(p."id")::integer AS "participantCount"
+			FROM "Session" s
+			LEFT JOIN "Participant" p ON p."sessionId" = s."id"
+			WHERE
+				s."quizId" = ${quizId}
+				AND s."ended" = true
+				AND s."favoriteId" IS NOT NULL
+			GROUP BY s."id"
+		),
+		"stats" AS (
+			SELECT
+				COUNT(*)::integer AS "completedSessions",
+				COALESCE(SUM("participantCount"), 0)::integer AS "participantWeight"
+			FROM "completedSessions"
+		),
+		"placements" AS (
+			SELECT
+				qi."id" AS "itemId",
+				completed."id" AS "sessionId",
+				completed."participantCount",
+				CASE
+					WHEN completed."favoriteId" = qi."id" THEN 1
+					ELSE eliminated."cluster" + 1
+				END::integer AS "placement"
+			FROM "QuizItem" qi
+			CROSS JOIN "completedSessions" completed
+			LEFT JOIN LATERAL (
+				SELECT match."cluster"
+				FROM "SessionMatch" match
+				WHERE
+					match."sessionId" = completed."id"
+					AND match."completed" = true
+					AND match."winnerId" IS NOT NULL
+					AND match."winnerId" <> qi."id"
+					AND (
+						match."firstItemId" = qi."id"
+						OR match."secondItemId" = qi."id"
+					)
+				LIMIT 1
+			) eliminated ON true
+			WHERE qi."quizId" = ${quizId}
+		),
+		"scores" AS (
+			SELECT
+				qi."id" AS "itemId",
+				qi."title" AS "itemTitle",
+				i."id" AS "imageId",
+				i."name" AS "imageName",
+				i."folder" AS "imageFolder",
+				COUNT(*) FILTER (WHERE placement."placement" = 1)::integer AS "sessionWins",
+				COALESCE(
+					SUM(
+						(${quiz.size + 1} - placement."placement")
+						* placement."participantCount"
+					),
+					0
+				)::integer AS "weightedScore",
+				COALESCE(
+					SUM(placement."placement" * placement."participantCount"),
+					0
+				)::integer AS "weightedPlacement"
+			FROM "QuizItem" qi
+			LEFT JOIN "Image" i ON i."id" = qi."imageId"
+			LEFT JOIN "placements" placement ON placement."itemId" = qi."id"
+			WHERE qi."quizId" = ${quizId}
+			GROUP BY qi."id", i."id"
+		)
+		SELECT scores.*, stats."completedSessions", stats."participantWeight"
+		FROM "scores" scores
+		CROSS JOIN "stats" stats
+		ORDER BY
+			scores."weightedScore" DESC,
+			scores."sessionWins" DESC,
+			LOWER(scores."itemTitle") ASC NULLS LAST,
+			scores."itemId" ASC
 	`)
 
-	const completedSessions = rows.reduce((sum, row) => sum + row.sessionWins, 0)
-	const participantWeight = rows.reduce((sum, row) => sum + row.weightedScore, 0)
+	const completedSessions = rows[0]?.completedSessions ?? 0
+	const participantWeight = rows[0]?.participantWeight ?? 0
+	if (completedSessions === 0 || participantWeight === 0) {
+		return { completedSessions, participantWeight, entries: [] }
+	}
+
 	let previousScore: number | undefined
 	let previousWins: number | undefined
 	let currentRank = 0
@@ -486,11 +549,15 @@ export async function getQuizLeaderboard(
 						: null,
 			},
 			sessionWins: row.sessionWins,
+			averageRank: Number((row.weightedPlacement / participantWeight).toFixed(2)),
 			weightedScore: row.weightedScore,
-			share:
-				participantWeight === 0
-					? 0
-					: Number(((row.weightedScore / participantWeight) * 100).toFixed(1)),
+			scorePercentage: Number(
+				((row.weightedScore / (quiz.size * participantWeight)) * 100).toFixed(1),
+			),
+			// Kept as a response alias for existing API consumers.
+			share: Number(
+				((row.weightedScore / (quiz.size * participantWeight)) * 100).toFixed(1),
+			),
 		}
 	})
 

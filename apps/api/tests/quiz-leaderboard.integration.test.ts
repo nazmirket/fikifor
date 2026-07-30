@@ -9,8 +9,7 @@ integration('participant-weighted quiz leaderboard', () => {
 	let getQuizes: typeof import('../services/QuizService').getQuizes
 	let ownerId: number
 	let quizId: number
-	let firstItemId: number
-	let secondItemId: number
+	let itemIds: number[]
 	let participantIds: number[]
 
 	beforeAll(async () => {
@@ -42,7 +41,7 @@ integration('participant-weighted quiz leaderboard', () => {
 		participantIds = users.map(user => user.id)
 
 		const images = await Promise.all(
-			Array.from({ length: 3 }, (_, index) =>
+			Array.from({ length: 5 }, (_, index) =>
 				prisma.image.create({
 					data: { folder: 'test', name: `ranking-${index}.jpeg` },
 				}),
@@ -54,22 +53,28 @@ integration('participant-weighted quiz leaderboard', () => {
 				coverId: images[0].id,
 				title: 'Weighted ranking fixture',
 				description: 'Participant counts decide aggregate score',
-				size: 32,
+				size: 4,
 				published: true,
 				items: {
 					create: [
 						{ title: 'First city', imageId: images[1].id },
 						{ title: 'Second city', imageId: images[2].id },
+						{ title: 'Third city', imageId: images[3].id },
+						{ title: 'Fourth city', imageId: images[4].id },
 					],
 				},
 			},
 			include: { items: { orderBy: { id: 'asc' } } },
 		})
 		quizId = quiz.id
-		firstItemId = quiz.items[0].id
-		secondItemId = quiz.items[1].id
+		itemIds = quiz.items.map(item => item.id)
 
-		async function completedSession(code: string, favoriteId: number, userIds: number[]) {
+		async function completedSession(
+			code: string,
+			placements: [number, number, number, number],
+			userIds: number[],
+		) {
+			const [winnerId, finalistId, firstSemiFinalistId, secondSemiFinalistId] = placements
 			await prisma.session.create({
 				data: {
 					code,
@@ -78,44 +83,103 @@ integration('participant-weighted quiz leaderboard', () => {
 					cluster: 0,
 					started: true,
 					ended: true,
-					favoriteId,
+					favoriteId: winnerId,
 					participants: {
 						createMany: { data: userIds.map(userId => ({ userId })) },
+					},
+					matches: {
+						create: [
+							{
+								cluster: 2,
+								order: 1,
+								completed: true,
+								firstItemId: winnerId,
+								secondItemId: firstSemiFinalistId,
+								winnerId,
+							},
+							{
+								cluster: 2,
+								order: 2,
+								completed: true,
+								firstItemId: finalistId,
+								secondItemId: secondSemiFinalistId,
+								winnerId: finalistId,
+							},
+							{
+								cluster: 1,
+								order: 1,
+								completed: true,
+								firstItemId: winnerId,
+								secondItemId: finalistId,
+								winnerId,
+							},
+						],
 					},
 				},
 			})
 		}
 
-		await completedSession('RANKING0000001', firstItemId, participantIds.slice(0, 2))
-		await completedSession('RANKING0000002', firstItemId, participantIds)
-		await completedSession('RANKING0000003', secondItemId, participantIds.slice(0, 4))
+		await completedSession(
+			'RANKING0000001',
+			[itemIds[0], itemIds[1], itemIds[2], itemIds[3]],
+			participantIds.slice(0, 2),
+		)
+		await completedSession(
+			'RANKING0000002',
+			[itemIds[0], itemIds[2], itemIds[1], itemIds[3]],
+			participantIds,
+		)
+		await completedSession(
+			'RANKING0000003',
+			[itemIds[1], itemIds[3], itemIds[0], itemIds[2]],
+			participantIds.slice(0, 4),
+		)
 	})
 
 	afterAll(async () => {
 		await prisma?.$disconnect()
 	})
 
-	it('sums participant counts for every favorite and ranks by weighted score', async () => {
+	it('ranks every item from every completed bracket with participant weighting', async () => {
 		const leaderboard = await getQuizLeaderboard(quizId)
 
 		expect(leaderboard).toMatchObject({
 			completedSessions: 3,
 			participantWeight: 11,
 		})
-		expect(leaderboard.entries).toHaveLength(2)
+		expect(leaderboard.entries).toHaveLength(4)
 		expect(leaderboard.entries[0]).toMatchObject({
 			rank: 1,
-			item: { id: firstItemId, title: 'First city' },
+			item: { id: itemIds[0], title: 'First city' },
 			sessionWins: 2,
-			weightedScore: 7,
-			share: 63.6,
+			averageRank: 1.73,
+			weightedScore: 36,
+			scorePercentage: 81.8,
+			share: 81.8,
 		})
 		expect(leaderboard.entries[1]).toMatchObject({
 			rank: 2,
-			item: { id: secondItemId, title: 'Second city' },
+			item: { id: itemIds[1], title: 'Second city' },
 			sessionWins: 1,
-			weightedScore: 4,
-			share: 36.4,
+			averageRank: 2.09,
+			weightedScore: 32,
+			scorePercentage: 72.7,
+		})
+		expect(leaderboard.entries[2]).toMatchObject({
+			rank: 3,
+			item: { id: itemIds[2], title: 'Third city' },
+			sessionWins: 0,
+			averageRank: 2.55,
+			weightedScore: 27,
+			scorePercentage: 61.4,
+		})
+		expect(leaderboard.entries[3]).toMatchObject({
+			rank: 4,
+			item: { id: itemIds[3], title: 'Fourth city' },
+			sessionWins: 0,
+			averageRank: 2.64,
+			weightedScore: 26,
+			scorePercentage: 59.1,
 		})
 	})
 

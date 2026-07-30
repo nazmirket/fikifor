@@ -96,9 +96,9 @@
 							Topluluk sıralaması
 						</h2>
 						<p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
-							Her tamamlanan oyunun kazananı, o odadaki katılımcı sayısı kadar puan
-							kazanır. Böylece daha kalabalık oyunların sonucu sıralamada daha fazla
-							ağırlık taşır.
+							Her tamamlanan oyunda tüm seçenekler ulaştıkları eleme turuna göre
+							sıralanır. Sıra puanı odadaki katılımcı sayısıyla çarpılır; böylece
+							kalabalık oyunlar genel sonuca daha fazla ağırlık verir.
 						</p>
 					</div>
 
@@ -122,14 +122,15 @@
 					v-if="leaderboard.entries.length"
 					class="mt-7 overflow-x-auto rounded-2xl border border-gray-800"
 				>
-					<table class="w-full min-w-[720px] border-collapse text-left">
+					<table class="w-full min-w-[860px] border-collapse text-left">
 						<thead class="bg-gray-950/80 text-xs uppercase tracking-wider text-gray-600">
 							<tr>
 								<th scope="col" class="w-20 px-5 py-4">Sıra</th>
-								<th scope="col" class="px-5 py-4">Favori</th>
+								<th scope="col" class="px-5 py-4">Seçenek</th>
 								<th scope="col" class="px-5 py-4 text-right">Oyun zaferi</th>
+								<th scope="col" class="px-5 py-4 text-right">Ort. sıra</th>
 								<th scope="col" class="px-5 py-4 text-right">Ağırlıklı puan</th>
-								<th scope="col" class="w-48 px-5 py-4">Pay</th>
+								<th scope="col" class="w-48 px-5 py-4">Başarı</th>
 							</tr>
 						</thead>
 						<tbody class="divide-y divide-gray-800">
@@ -168,6 +169,9 @@
 								<td class="px-5 py-4 text-right font-medium text-gray-400">
 									{{ entry.sessionWins }}
 								</td>
+								<td class="px-5 py-4 text-right font-medium text-gray-400">
+									{{ formatRank(entry.averageRank) }}
+								</td>
 								<td class="px-5 py-4 text-right font-bold text-indigo-300">
 									{{ entry.weightedScore }}
 								</td>
@@ -176,11 +180,11 @@
 										<div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
 											<div
 												class="h-full rounded-full bg-indigo-500"
-												:style="{ width: `${entry.share}%` }"
+												:style="{ width: `${entry.scorePercentage}%` }"
 											/>
 										</div>
 										<span class="w-12 text-right text-xs font-semibold text-gray-400">
-											%{{ entry.share }}
+											%{{ entry.scorePercentage }}
 										</span>
 									</div>
 								</td>
@@ -196,8 +200,8 @@
 					<UIcon name="heroicons:trophy" class="text-gray-700" :size="36" />
 					<h3 class="mt-4 font-semibold text-gray-300">Henüz tamamlanan oyun yok</h3>
 					<p class="mt-2 max-w-md text-sm leading-6 text-gray-600">
-						İlk oyun tamamlandığında kazanan ve katılımcı ağırlıklı puanı burada
-						görünecek.
+						İlk oyun tamamlandığında tüm seçeneklerin katılımcı ağırlıklı sıralaması
+						burada görünecek.
 					</p>
 				</div>
 			</section>
@@ -241,6 +245,13 @@ function rankClass(rank: number) {
 	if (rank === 2) return 'border-slate-400/40 bg-slate-400/10 text-slate-300'
 	if (rank === 3) return 'border-orange-500/40 bg-orange-500/10 text-orange-300'
 	return 'border-gray-700 bg-gray-900 text-gray-500'
+}
+
+function formatRank(rank: number) {
+	return new Intl.NumberFormat('tr-TR', {
+		minimumFractionDigits: 0,
+		maximumFractionDigits: 2,
+	}).format(rank)
 }
 
 async function load() {
