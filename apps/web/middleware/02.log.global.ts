@@ -2,7 +2,8 @@ import { useAuthStore } from '~/store/auth'
 
 export default defineNuxtRouteMiddleware(to => {
 	const publicRoutes = new Set(['/', '/quizes', '/login', '/signup'])
-	const isProtected = !publicRoutes.has(to.path)
+	const isPublicQuizRoute = to.path === '/quizes' || to.path.startsWith('/quizes/')
+	const isProtected = !publicRoutes.has(to.path) && !isPublicQuizRoute
 
 	// Check if token expired
 	const authStore = useAuthStore()

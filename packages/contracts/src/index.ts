@@ -146,6 +146,11 @@ export interface UserSummary {
 	username: string
 }
 
+export interface PublisherSummary {
+	username: string
+	displayName: string | null
+}
+
 export interface AuthResult {
 	token: string
 	user: { userId: number; username: string }
@@ -169,7 +174,7 @@ export interface Quiz {
 	description: string
 	size: number
 	published?: boolean
-	owner?: { username: string }
+	owner?: PublisherSummary
 	cover: ImageAsset
 	items: QuizItem[]
 	createdAt?: string
@@ -183,11 +188,25 @@ export interface QuizSummary {
 	description: string
 	size: number
 	published: true
-	owner: { username: string }
+	owner: PublisherSummary
 	cover: ImageAsset
 	createdAt: string
 	updatedAt: string | null
 	sessionCount: number
+}
+
+export interface QuizLeaderboardEntry {
+	rank: number
+	item: QuizItem
+	sessionWins: number
+	weightedScore: number
+	share: number
+}
+
+export interface QuizLeaderboard {
+	completedSessions: number
+	participantWeight: number
+	entries: QuizLeaderboardEntry[]
 }
 
 export interface Participant {

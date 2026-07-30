@@ -89,6 +89,7 @@ model Session {
     updatedAt    DateTime?      @updatedAt
 
     @@index([quizId])
+    @@index([quizId, ended, favoriteId])
     @@index([adminId])
 }
 
@@ -134,6 +135,7 @@ model SessionVote {
 model User {
     id             Int           @id @default(autoincrement())
     username       String        @unique()
+    displayName    String?
     password       String
     participations Participant[]
     quizes         Quiz[]

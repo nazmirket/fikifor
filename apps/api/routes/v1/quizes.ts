@@ -61,6 +61,14 @@ router.get('/', validate('query', publicQuizQuerySchema), QuizController.getQuiz
 // Get my quizes
 router.get('/me', protect, QuizController.getMyQuizes)
 
+// Get aggregate results for a published quiz or an owner preview
+router.get(
+	'/:quizId/leaderboard',
+	optionalAuth,
+	validate('params', quizIdParamsSchema),
+	QuizController.getQuizLeaderboard,
+)
+
 // Publish quiz
 router.put(
 	'/:quizId/publish',

@@ -5,6 +5,7 @@ import { Prisma as PrismaQuery } from '@prisma/client'
 import type {
 	CreateQuizInput,
 	PublicQuizQuery,
+	QuizLeaderboard,
 	UpdateQuizInput,
 	UpdateQuizItemInput,
 } from '@fikifor/contracts'
@@ -19,12 +20,23 @@ interface PublicQuizRow {
 	createdAt: Date
 	updatedAt: Date | null
 	ownerUsername: string
+	ownerDisplayName: string | null
 	coverId: number
 	coverName: string
 	coverFolder: string
 	sessionCount: number
 	relevance: number
 	total: number
+}
+
+interface QuizLeaderboardRow {
+	itemId: number
+	itemTitle: string | null
+	imageId: number | null
+	imageName: string | null
+	imageFolder: string | null
+	sessionWins: number
+	weightedScore: number
 }
 
 function publicQuizOrder(query: PublicQuizQuery) {
@@ -80,6 +92,7 @@ export async function createQuiz(
 				owner: {
 					select: {
 						username: true,
+						displayName: true,
 					},
 				},
 				title: true,
@@ -325,6 +338,7 @@ export async function getQuizes(query: PublicQuizQuery) {
 				q."createdAt",
 				q."updatedAt",
 				u."username" AS "ownerUsername",
+				u."displayName" AS "ownerDisplayName",
 				i."id" AS "coverId",
 				i."name" AS "coverName",
 				i."folder" AS "coverFolder",
@@ -338,9 +352,11 @@ export async function getQuizes(query: PublicQuizQuery) {
 							similarity(LOWER(q."description"), ${search}),
 							word_similarity(${search}, LOWER(q."description")),
 							similarity(LOWER(u."username"), ${search}),
+							similarity(LOWER(COALESCE(u."displayName", '')), ${search}),
 							CASE
 								WHEN STRPOS(LOWER(q."title"), ${search}) > 0 THEN 1.0
 								WHEN STRPOS(LOWER(q."description"), ${search}) > 0 THEN 0.9
+								WHEN STRPOS(LOWER(COALESCE(u."displayName", '')), ${search}) > 0 THEN 0.85
 								ELSE 0.0
 							END
 						)
@@ -357,14 +373,16 @@ export async function getQuizes(query: PublicQuizQuery) {
 					OR STRPOS(LOWER(q."title"), ${search}) > 0
 					OR STRPOS(LOWER(q."description"), ${search}) > 0
 					OR STRPOS(LOWER(u."username"), ${search}) > 0
+					OR STRPOS(LOWER(COALESCE(u."displayName", '')), ${search}) > 0
 					OR q."title" % ${search}
 					OR q."description" % ${search}
 					OR similarity(LOWER(q."title"), ${search}) >= 0.2
 					OR word_similarity(${search}, LOWER(q."title")) >= 0.25
 					OR similarity(LOWER(q."description"), ${search}) >= 0.2
 					OR word_similarity(${search}, LOWER(q."description")) >= 0.25
+					OR similarity(LOWER(COALESCE(u."displayName", '')), ${search}) >= 0.2
 				)
-			GROUP BY q."id", u."username", i."id"
+			GROUP BY q."id", u."username", u."displayName", i."id"
 		)
 		SELECT
 			"ranked".*,
@@ -384,7 +402,10 @@ export async function getQuizes(query: PublicQuizQuery) {
 			published: true as const,
 			createdAt: row.createdAt,
 			updatedAt: row.updatedAt,
-			owner: { username: row.ownerUsername },
+			owner: {
+				username: row.ownerUsername,
+				displayName: row.ownerDisplayName,
+			},
 			cover: {
 				id: row.coverId,
 				name: row.coverName,
@@ -394,6 +415,86 @@ export async function getQuizes(query: PublicQuizQuery) {
 		})),
 		total: rows[0]?.total ?? 0,
 	}
+}
+
+// Rank completed-session favorites. A session contributes one point per participant
+// to its winning item, so larger rooms carry proportionally more weight.
+export async function getQuizLeaderboard(
+	quizId: number,
+	userId?: number,
+): Promise<QuizLeaderboard> {
+	const quiz = await Prisma.quiz.findFirst({
+		where: {
+			id: quizId,
+			OR: [...(userId ? [{ ownerId: userId }] : []), { published: true }],
+		},
+		select: { id: true },
+	})
+	if (!quiz) throw notFound('Quiz not found')
+
+	const rows = await Prisma.$queryRaw<QuizLeaderboardRow[]>(PrismaQuery.sql`
+		SELECT
+			qi."id" AS "itemId",
+			qi."title" AS "itemTitle",
+			i."id" AS "imageId",
+			i."name" AS "imageName",
+			i."folder" AS "imageFolder",
+			COUNT(s."id")::integer AS "sessionWins",
+			SUM(participants."count")::integer AS "weightedScore"
+		FROM "Session" s
+		INNER JOIN "QuizItem" qi
+			ON qi."id" = s."favoriteId"
+			AND qi."quizId" = ${quizId}
+		LEFT JOIN "Image" i ON i."id" = qi."imageId"
+		INNER JOIN LATERAL (
+			SELECT COUNT(*)::integer AS "count"
+			FROM "Participant" p
+			WHERE p."sessionId" = s."id"
+		) participants ON true
+		WHERE
+			s."quizId" = ${quizId}
+			AND s."ended" = true
+			AND s."favoriteId" IS NOT NULL
+		GROUP BY qi."id", i."id"
+		ORDER BY "weightedScore" DESC, "sessionWins" DESC, LOWER(qi."title") ASC NULLS LAST, qi."id" ASC
+	`)
+
+	const completedSessions = rows.reduce((sum, row) => sum + row.sessionWins, 0)
+	const participantWeight = rows.reduce((sum, row) => sum + row.weightedScore, 0)
+	let previousScore: number | undefined
+	let previousWins: number | undefined
+	let currentRank = 0
+
+	const entries = rows.map((row, index) => {
+		if (row.weightedScore !== previousScore || row.sessionWins !== previousWins) {
+			currentRank = index + 1
+			previousScore = row.weightedScore
+			previousWins = row.sessionWins
+		}
+		return {
+			rank: currentRank,
+			item: {
+				id: row.itemId,
+				title: row.itemTitle,
+				image:
+					row.imageId && row.imageName && row.imageFolder
+						? {
+								id: row.imageId,
+								name: row.imageName,
+								folder: row.imageFolder,
+							}
+						: null,
+			},
+			sessionWins: row.sessionWins,
+			weightedScore: row.weightedScore,
+			share:
+				participantWeight === 0
+					? 0
+					: Number(((row.weightedScore / participantWeight) * 100).toFixed(1)),
+		}
+	})
+
+	return { completedSessions, participantWeight, entries }
 }
 
 // Get quizes of user
@@ -442,7 +543,7 @@ export async function getQuizById(quizId: number, userId?: number) {
 			size: true,
 			createdAt: true,
 			updatedAt: true,
-			owner: { select: { username: true } },
+			owner: { select: { username: true, displayName: true } },
 			cover: true,
 			_count: { select: { sessions: true } },
 			items: {

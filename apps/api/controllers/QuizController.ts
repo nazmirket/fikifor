@@ -94,6 +94,13 @@ export const getMyQuizes = AsyncMd(async (req: ApiReq, res: ApiRes) => {
 	res.status(200).json({ success: true, data: quizes })
 })
 
+// Get participant-weighted aggregate quiz results
+export const getQuizLeaderboard = AsyncMd(async (req: ApiReq, res: ApiRes) => {
+	const quizId = numberParam(req, 'quizId')
+	const leaderboard = await QuizService.getQuizLeaderboard(quizId, req.userId)
+	res.status(200).json({ success: true, data: leaderboard })
+})
+
 // Get quiz by id
 export const getQuizById = AsyncMd(async (req: ApiReq, res: ApiRes) => {
 	const quizId = numberParam(req, 'quizId')

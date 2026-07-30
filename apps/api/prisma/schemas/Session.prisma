@@ -17,5 +17,6 @@ model Session {
     updatedAt    DateTime?      @updatedAt
 
     @@index([quizId])
+    @@index([quizId, ended, favoriteId])
     @@index([adminId])
 }

@@ -22,10 +22,6 @@
 	@apply divide-gray-900 border-gray-900 !bg-black;
 }
 
-div.relative:has(input[type='text']) > span {
-	@apply pointer-events-auto px-[2px];
-}
-
 @keyframes tada {
 	0% {
 		transform: scale(1);

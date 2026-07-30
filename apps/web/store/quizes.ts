@@ -3,6 +3,7 @@ import type {
 	PublicQuizQuery,
 	Quiz,
 	QuizItem,
+	QuizLeaderboard,
 	QuizSummary,
 	UpdateQuizInput,
 	UpdateQuizItemInput,
@@ -12,6 +13,8 @@ import { defineStore } from 'pinia'
 export const useQuizStore = defineStore('quizes', () => {
 	const quizes = ref<QuizSummary[]>([])
 	const publicTotal = ref(0)
+	const selectedQuiz = ref<Quiz>()
+	const leaderboard = ref<QuizLeaderboard>()
 	const myQuizes = ref<Quiz[]>([])
 	let publicRequestSequence = 0
 
@@ -37,6 +40,22 @@ export const useQuizStore = defineStore('quizes', () => {
 		const response = await useApi<Quiz[]>('/quizes/me', { method: 'GET' })
 		if (!response.success) throw apiError(response.error)
 		myQuizes.value = response.data
+	}
+
+	async function getQuiz(quizId: number) {
+		const response = await useApi<Quiz>(`/quizes/${quizId}`, { method: 'GET' })
+		if (!response.success) throw apiError(response.error)
+		selectedQuiz.value = response.data
+		return response.data
+	}
+
+	async function getLeaderboard(quizId: number) {
+		const response = await useApi<QuizLeaderboard>(`/quizes/${quizId}/leaderboard`, {
+			method: 'GET',
+		})
+		if (!response.success) throw apiError(response.error)
+		leaderboard.value = response.data
+		return response.data
 	}
 
 	async function createQuiz(formdata: FormData) {
@@ -140,6 +159,8 @@ export const useQuizStore = defineStore('quizes', () => {
 	return {
 		getQuizes,
 		getMyQuizes,
+		getQuiz,
+		getLeaderboard,
 		createQuiz,
 		updateQuiz,
 		publishQuiz,
@@ -152,6 +173,8 @@ export const useQuizStore = defineStore('quizes', () => {
 		createSession,
 		quizes,
 		publicTotal,
+		selectedQuiz,
+		leaderboard,
 		myQuizes,
 	}
 })
