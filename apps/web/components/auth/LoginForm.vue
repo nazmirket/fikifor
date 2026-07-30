@@ -36,7 +36,7 @@
 		<div>
 			Eğer hesabınız yoksa
 			<NuxtLink
-				:to="useRoute().query.code ? `/signup?code=${useRoute().query.code}` : '/signup'"
+				:to="{ path: '/signup', query: useRoute().query }"
 				class="text-indigo-400"
 			>
 				hesap oluşturun
@@ -63,6 +63,15 @@ function send() {
 
 			if (code?.length === 14 && code.toUpperCase() === code) {
 				return navigateTo(`/sessions/${code}`)
+			}
+
+			const redirect = useRoute().query.redirect
+			if (
+				typeof redirect === 'string' &&
+				redirect.startsWith('/') &&
+				!redirect.startsWith('//')
+			) {
+				return navigateTo(redirect)
 			}
 
 			navigateTo('/')

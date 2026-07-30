@@ -1,29 +1,41 @@
 import Prisma from '../prisma'
 import * as StrUtils from '../utils/StrUtils'
+import { Prisma as PrismaQuery } from '@prisma/client'
 import { notFound } from '../utils/AppError'
 import { matchSelect } from './GameService'
 
-// Create Quiz
+interface SessionQuizRow {
+	size: number
+}
+
+// Create a session while holding the quiz row so publish access cannot change mid-request.
 export async function createSession(quizId: number, userId: number) {
 	const code = StrUtils.shortid()
 
-	const quiz = await Prisma.quiz.findUnique({
-		where: { id: quizId, ownerId: userId },
+	return Prisma.$transaction(async transaction => {
+		const [quiz] = await transaction.$queryRaw<SessionQuizRow[]>(PrismaQuery.sql`
+			SELECT "size"
+			FROM "Quiz"
+			WHERE
+				"id" = ${quizId}
+				AND ("ownerId" = ${userId} OR "published" = true)
+			FOR SHARE
+		`)
+
+		if (!quiz) throw notFound('Quiz not found')
+
+		await transaction.session.create({
+			data: {
+				code,
+				cluster: quiz.size / 2,
+				admin: { connect: { id: userId } },
+				quiz: { connect: { id: quizId } },
+				participants: { create: { userId } },
+			},
+		})
+
+		return code
 	})
-
-	if (!quiz) throw notFound('Quiz not found')
-
-	await Prisma.session.create({
-		data: {
-			code,
-			cluster: quiz.size / 2,
-			admin: { connect: { id: userId } },
-			quiz: { connect: { id: quizId } },
-			participants: { create: { userId } },
-		},
-	})
-
-	return code
 }
 
 // Get Session

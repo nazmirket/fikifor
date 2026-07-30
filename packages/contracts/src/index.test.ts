@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { sessionVoteInputSchema, signupInputSchema } from './index'
+import { publicQuizQuerySchema, sessionVoteInputSchema, signupInputSchema } from './index'
 
 describe('shared contracts', () => {
 	it('normalizes valid vote identifiers', () => {
@@ -17,5 +17,23 @@ describe('shared contracts', () => {
 			passwordConfirmation: 'password-two',
 		})
 		expect(result.success).toBe(false)
+	})
+
+	it('normalizes public quiz discovery query parameters', () => {
+		expect(
+			publicQuizQuerySchema.parse({
+				q: '  film  ',
+				sortBy: 'createdAt',
+				sortOrder: 'asc',
+				page: '2',
+				pageSize: '24',
+			}),
+		).toEqual({
+			q: 'film',
+			sortBy: 'createdAt',
+			sortOrder: 'asc',
+			page: 2,
+			pageSize: 24,
+		})
 	})
 })

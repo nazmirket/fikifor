@@ -1,12 +1,57 @@
 import Prisma from '../prisma'
 
 import * as FileService from './FileService'
+import { Prisma as PrismaQuery } from '@prisma/client'
 import type {
 	CreateQuizInput,
+	PublicQuizQuery,
 	UpdateQuizInput,
 	UpdateQuizItemInput,
 } from '@fikifor/contracts'
 import { badRequest, notFound } from '../utils/AppError'
+
+interface PublicQuizRow {
+	id: number
+	title: string
+	description: string
+	size: number
+	published: boolean
+	createdAt: Date
+	updatedAt: Date | null
+	ownerUsername: string
+	coverId: number
+	coverName: string
+	coverFolder: string
+	sessionCount: number
+	relevance: number
+	total: number
+}
+
+function publicQuizOrder(query: PublicQuizQuery) {
+	const key = `${query.sortBy}:${query.sortOrder}`
+	switch (key) {
+		case 'relevance:asc':
+			return PrismaQuery.sql`"relevance" ASC, "sessionCount" DESC, "createdAt" DESC, "id" DESC`
+		case 'relevance:desc':
+			return PrismaQuery.sql`"relevance" DESC, "sessionCount" DESC, "createdAt" DESC, "id" DESC`
+		case 'sessions:asc':
+			return PrismaQuery.sql`"sessionCount" ASC, "createdAt" DESC, "id" DESC`
+		case 'sessions:desc':
+			return PrismaQuery.sql`"sessionCount" DESC, "createdAt" DESC, "id" DESC`
+		case 'createdAt:asc':
+			return PrismaQuery.sql`"createdAt" ASC, "id" ASC`
+		case 'createdAt:desc':
+			return PrismaQuery.sql`"createdAt" DESC, "id" DESC`
+		case 'updatedAt:asc':
+			return PrismaQuery.sql`"updatedAt" ASC NULLS LAST, "id" ASC`
+		case 'updatedAt:desc':
+			return PrismaQuery.sql`"updatedAt" DESC NULLS LAST, "id" DESC`
+		case 'title:desc':
+			return PrismaQuery.sql`LOWER("title") DESC, "id" DESC`
+		default:
+			return PrismaQuery.sql`LOWER("title") ASC, "id" ASC`
+	}
+}
 
 // Create Quiz
 export async function createQuiz(
@@ -115,9 +160,10 @@ export async function publishQuiz(quizId: number, userId: number) {
 		throw badRequest('Every quiz item must have an image before publishing')
 	}
 
-	await Prisma.quiz.update({
+	return Prisma.quiz.update({
 		where: { id: quizId },
 		data: { published: true },
+		select: { id: true, published: true },
 	})
 }
 
@@ -129,9 +175,10 @@ export async function unpublishQuiz(quizId: number, userId: number) {
 
 	if (!quiz) throw notFound('Quiz not found')
 
-	await Prisma.quiz.update({
+	return Prisma.quiz.update({
 		where: { id: quizId },
 		data: { published: false },
+		select: { id: true, published: true },
 	})
 }
 
@@ -261,40 +308,109 @@ export async function updateItemInfo(
 	return updated
 }
 
-// Get quizes
-export async function getQuizes() {
-	const quizes = await Prisma.quiz.findMany({
-		where: { published: true },
-		select: {
-			id: true,
-			title: true,
-			description: true,
-			size: true,
-			owner: { select: { username: true } },
-			cover: true,
-			items: {
-				orderBy: { id: 'asc' },
-				select: {
-					id: true,
-					title: true,
-					image: true,
-				},
+// Get public quizzes with typo-tolerant search, stable sorting, and pagination.
+export async function getQuizes(query: PublicQuizQuery) {
+	const search = query.q.toLowerCase()
+	const offset = (query.page - 1) * query.pageSize
+	const orderBy = publicQuizOrder(query)
+
+	const rows = await Prisma.$queryRaw<PublicQuizRow[]>(PrismaQuery.sql`
+		WITH "ranked" AS (
+			SELECT
+				q."id",
+				q."title",
+				q."description",
+				q."size",
+				q."published",
+				q."createdAt",
+				q."updatedAt",
+				u."username" AS "ownerUsername",
+				i."id" AS "coverId",
+				i."name" AS "coverName",
+				i."folder" AS "coverFolder",
+				COUNT(s."id")::integer AS "sessionCount",
+				(
+					CASE
+						WHEN ${search} = '' THEN 1.0
+						ELSE GREATEST(
+							similarity(LOWER(q."title"), ${search}),
+							word_similarity(${search}, LOWER(q."title")),
+							similarity(LOWER(q."description"), ${search}),
+							word_similarity(${search}, LOWER(q."description")),
+							similarity(LOWER(u."username"), ${search}),
+							CASE
+								WHEN STRPOS(LOWER(q."title"), ${search}) > 0 THEN 1.0
+								WHEN STRPOS(LOWER(q."description"), ${search}) > 0 THEN 0.9
+								ELSE 0.0
+							END
+						)
+					END
+				)::double precision AS "relevance"
+			FROM "Quiz" q
+			INNER JOIN "User" u ON u."id" = q."ownerId"
+			INNER JOIN "Image" i ON i."id" = q."coverId"
+			LEFT JOIN "Session" s ON s."quizId" = q."id"
+			WHERE
+				q."published" = true
+				AND (
+					${search} = ''
+					OR STRPOS(LOWER(q."title"), ${search}) > 0
+					OR STRPOS(LOWER(q."description"), ${search}) > 0
+					OR STRPOS(LOWER(u."username"), ${search}) > 0
+					OR q."title" % ${search}
+					OR q."description" % ${search}
+					OR similarity(LOWER(q."title"), ${search}) >= 0.2
+					OR word_similarity(${search}, LOWER(q."title")) >= 0.25
+					OR similarity(LOWER(q."description"), ${search}) >= 0.2
+					OR word_similarity(${search}, LOWER(q."description")) >= 0.25
+				)
+			GROUP BY q."id", u."username", i."id"
+		)
+		SELECT
+			"ranked".*,
+			COUNT(*) OVER()::integer AS "total"
+		FROM "ranked"
+		ORDER BY ${orderBy}
+		LIMIT ${query.pageSize}
+		OFFSET ${offset}
+	`)
+
+	return {
+		items: rows.map(row => ({
+			id: row.id,
+			title: row.title,
+			description: row.description,
+			size: row.size,
+			published: true as const,
+			createdAt: row.createdAt,
+			updatedAt: row.updatedAt,
+			owner: { username: row.ownerUsername },
+			cover: {
+				id: row.coverId,
+				name: row.coverName,
+				folder: row.coverFolder,
 			},
-		},
-	})
-	return quizes
+			sessionCount: row.sessionCount,
+		})),
+		total: rows[0]?.total ?? 0,
+	}
 }
 
 // Get quizes of user
 export async function getQuizesOfUser(userId: number) {
 	const quizes = await Prisma.quiz.findMany({
 		where: { ownerId: userId },
+		orderBy: { createdAt: 'desc' },
 		select: {
 			id: true,
 			title: true,
 			description: true,
 			size: true,
+			published: true,
+			createdAt: true,
+			updatedAt: true,
 			cover: true,
+			_count: { select: { sessions: true } },
 			items: {
 				orderBy: { id: 'asc' },
 				select: {
@@ -305,7 +421,10 @@ export async function getQuizesOfUser(userId: number) {
 			},
 		},
 	})
-	return quizes
+	return quizes.map(({ _count, ...quiz }) => ({
+		...quiz,
+		sessionCount: _count.sessions,
+	}))
 }
 
 // Get quiz by id
@@ -321,8 +440,11 @@ export async function getQuizById(quizId: number, userId?: number) {
 			published: true,
 			description: true,
 			size: true,
+			createdAt: true,
+			updatedAt: true,
 			owner: { select: { username: true } },
 			cover: true,
+			_count: { select: { sessions: true } },
 			items: {
 				orderBy: { id: 'asc' },
 				select: {
@@ -333,5 +455,7 @@ export async function getQuizById(quizId: number, userId?: number) {
 			},
 		},
 	})
-	return quiz
+	if (!quiz) throw notFound('Quiz not found')
+	const { _count, ...details } = quiz
+	return { ...details, sessionCount: _count.sessions }
 }

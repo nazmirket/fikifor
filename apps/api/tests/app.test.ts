@@ -28,6 +28,17 @@ describe('HTTP application boundaries', () => {
 		expect(response.body.error.details.length).toBeGreaterThan(0)
 	})
 
+	it('validates public quiz discovery options before querying the database', async () => {
+		const response = await request(app).get('/api/v1/quizes?sortBy=unknown').expect(400)
+
+		expect(response.body.error.code).toBe('VALIDATION_ERROR')
+	})
+
+	it('protects the quiz publishing endpoint', async () => {
+		const response = await request(app).put('/api/v1/quizes/1/publish').expect(401)
+		expect(response.body.error.code).toBe('UNAUTHORIZED')
+	})
+
 	it('rejects untrusted browser origins', async () => {
 		const response = await request(app)
 			.get('/health')

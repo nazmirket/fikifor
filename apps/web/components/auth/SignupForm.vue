@@ -48,10 +48,7 @@
 
 		<div>
 			Eğer hesabınız varsa
-			<NuxtLink
-				:to="useRoute().query.code ? `/login?code=${useRoute().query.code}` : '/login'"
-				class="text-indigo-400"
-			>
+			<NuxtLink :to="{ path: '/login', query: useRoute().query }" class="text-indigo-400">
 				giriş yapın
 			</NuxtLink>
 		</div>
@@ -101,6 +98,15 @@ function send() {
 
 			if (code?.length === 14 && code.toUpperCase() === code) {
 				return navigateTo(`/sessions/${code}`)
+			}
+
+			const redirect = useRoute().query.redirect
+			if (
+				typeof redirect === 'string' &&
+				redirect.startsWith('/') &&
+				!redirect.startsWith('//')
+			) {
+				return navigateTo(redirect)
 			}
 
 			navigateTo('/')

@@ -219,8 +219,27 @@ export async function remove(image: Pick<Image, 'id' | 'folder' | 'name'> | null
 	})
 }
 
-export async function access(name: string) {
-	const image = await Prisma.image.findUnique({ where: { name } })
+export async function access(name: string, userId?: number) {
+	const image = await Prisma.image.findUnique({
+		where: { name },
+		include: {
+			cover: { select: { ownerId: true, published: true } },
+			item: {
+				select: {
+					quiz: { select: { ownerId: true, published: true } },
+				},
+			},
+		},
+	})
 	if (!image) throw notFound('File not found')
-	return { path: storagePath(image.folder, image.name), image }
+
+	const quiz = image.cover ?? image.item?.quiz
+	if (!quiz || (!quiz.published && quiz.ownerId !== userId)) {
+		throw notFound('File not found')
+	}
+
+	return {
+		path: storagePath(image.folder, image.name),
+		isPublic: quiz.published,
+	}
 }

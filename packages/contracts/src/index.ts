@@ -62,6 +62,22 @@ export const updateQuizInputSchema = createQuizInputSchema.pick({
 	description: true,
 })
 
+export const quizSortBySchema = z.enum([
+	'relevance',
+	'sessions',
+	'createdAt',
+	'updatedAt',
+	'title',
+])
+export const sortOrderSchema = z.enum(['asc', 'desc'])
+export const publicQuizQuerySchema = z.object({
+	q: z.string().trim().max(120).default(''),
+	sortBy: quizSortBySchema.default('sessions'),
+	sortOrder: sortOrderSchema.default('desc'),
+	page: z.coerce.number().int().min(1).max(10_000).default(1),
+	pageSize: z.coerce.number().int().min(1).max(48).default(12),
+})
+
 export const updateQuizItemInputSchema = z.object({
 	title: trimmedText('Title', 120),
 })
@@ -104,6 +120,9 @@ export type SignupInput = z.infer<typeof signupInputSchema>
 export type CreateQuizInput = z.infer<typeof createQuizInputSchema>
 export type UpdateQuizInput = z.infer<typeof updateQuizInputSchema>
 export type UpdateQuizItemInput = z.infer<typeof updateQuizItemInputSchema>
+export type PublicQuizQuery = z.infer<typeof publicQuizQuerySchema>
+export type QuizSortBy = z.infer<typeof quizSortBySchema>
+export type SortOrder = z.infer<typeof sortOrderSchema>
 export type CreateSessionInput = z.infer<typeof createSessionInputSchema>
 export type SessionJoinInput = z.infer<typeof sessionJoinInputSchema>
 export type SessionStartInput = z.infer<typeof sessionStartInputSchema>
@@ -153,6 +172,22 @@ export interface Quiz {
 	owner?: { username: string }
 	cover: ImageAsset
 	items: QuizItem[]
+	createdAt?: string
+	updatedAt?: string | null
+	sessionCount?: number
+}
+
+export interface QuizSummary {
+	id: number
+	title: string
+	description: string
+	size: number
+	published: true
+	owner: { username: string }
+	cover: ImageAsset
+	createdAt: string
+	updatedAt: string | null
+	sessionCount: number
 }
 
 export interface Participant {

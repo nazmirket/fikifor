@@ -48,6 +48,9 @@ model Quiz {
     // Data tracking fields
     createdAt   DateTime   @default(now())
     updatedAt   DateTime?  @updatedAt
+
+    @@index([published, createdAt])
+    @@index([published, updatedAt])
 }
 
 model QuizItem {

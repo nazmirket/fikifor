@@ -9,5 +9,13 @@ export function stringParam(req: Request, key: string) {
 }
 
 export function numberParam(req: Request, key: string) {
-	return Number.parseInt(stringParam(req, key), 10)
+	const value = req.params[key] as unknown
+	if (typeof value === 'number' && Number.isInteger(value) && value > 0) return value
+
+	if (typeof value === 'string') {
+		const parsed = Number(value)
+		if (Number.isInteger(parsed) && parsed > 0) return parsed
+	}
+
+	throw badRequest(`Invalid ${key} parameter`)
 }

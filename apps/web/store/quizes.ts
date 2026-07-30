@@ -1,20 +1,36 @@
 import type {
 	ImageAsset,
+	PublicQuizQuery,
 	Quiz,
 	QuizItem,
+	QuizSummary,
 	UpdateQuizInput,
 	UpdateQuizItemInput,
 } from '@fikifor/contracts'
 import { defineStore } from 'pinia'
 
 export const useQuizStore = defineStore('quizes', () => {
-	const quizes = ref<Quiz[]>([])
+	const quizes = ref<QuizSummary[]>([])
+	const publicTotal = ref(0)
 	const myQuizes = ref<Quiz[]>([])
+	let publicRequestSequence = 0
 
-	async function getQuizes() {
-		const response = await useApi<Quiz[]>('/quizes', { method: 'GET' })
+	async function getQuizes(query: PublicQuizQuery) {
+		const sequence = ++publicRequestSequence
+		const params = new URLSearchParams({
+			q: query.q,
+			sortBy: query.sortBy,
+			sortOrder: query.sortOrder,
+			page: String(query.page),
+			pageSize: String(query.pageSize),
+		})
+		const response = await useApi<QuizSummary[]>(`/quizes?${params.toString()}`, {
+			method: 'GET',
+		})
+		if (sequence !== publicRequestSequence) return
 		if (!response.success) throw apiError(response.error)
 		quizes.value = response.data
+		publicTotal.value = response.total ?? response.data.length
 	}
 
 	async function getMyQuizes() {
@@ -35,6 +51,24 @@ export const useQuizStore = defineStore('quizes', () => {
 			body: payload,
 		})
 		if (!response.success) throw apiError(response.error)
+	}
+
+	async function publishQuiz(quizId: number) {
+		const response = await useApi<{ id: number; published: boolean }>(
+			`/quizes/${quizId}/publish`,
+			{ method: 'PUT' },
+		)
+		if (!response.success) throw apiError(response.error)
+		return response.data
+	}
+
+	async function unpublishQuiz(quizId: number) {
+		const response = await useApi<{ id: number; published: boolean }>(
+			`/quizes/${quizId}/publish`,
+			{ method: 'DELETE' },
+		)
+		if (!response.success) throw apiError(response.error)
+		return response.data
 	}
 
 	async function updateQuizImage(quizId: number, formdata: FormData) {
@@ -108,6 +142,8 @@ export const useQuizStore = defineStore('quizes', () => {
 		getMyQuizes,
 		createQuiz,
 		updateQuiz,
+		publishQuiz,
+		unpublishQuiz,
 		updateQuizImage,
 		bulkUpdateItems,
 		updateItemInfo,
@@ -115,6 +151,7 @@ export const useQuizStore = defineStore('quizes', () => {
 		updateItemImageLink,
 		createSession,
 		quizes,
+		publicTotal,
 		myQuizes,
 	}
 })

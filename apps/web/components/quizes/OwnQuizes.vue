@@ -25,11 +25,25 @@
 					>
 						<span class="text-xs font-medium"> Liste boyutu {{ quiz.size }} </span>
 					</span>
+					<span
+						class="absolute left-3.5 top-3.5 rounded-full border px-2 py-0.5 text-xs font-semibold backdrop-blur"
+						:class="
+							quiz.published
+								? 'border-emerald-400/40 bg-emerald-500/80 text-white'
+								: 'border-gray-600 bg-gray-950/80 text-gray-300'
+						"
+					>
+						{{ quiz.published ? 'Yayında' : 'Taslak' }}
+					</span>
 					<Image :file="quiz?.cover" class="aspect-default h-[200px]" />
 					<div class="h-[60px] w-[280px] p-3 text-sm">
 						<span class="line-clamp-2 text-ellipsis text-gray-300">
 							{{ quiz.title }}
 						</span>
+					</div>
+					<div class="flex items-center gap-1.5 px-3 pb-3 text-xs text-gray-500">
+						<UIcon name="heroicons:play-circle" :size="17" />
+						{{ quiz.sessionCount ?? 0 }} oturum
 					</div>
 				</div>
 			</template>

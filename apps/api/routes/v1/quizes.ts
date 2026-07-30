@@ -9,6 +9,7 @@ import {
 	bulkUpdateQuizItemsInputSchema,
 	createQuizInputSchema,
 	itemIdParamsSchema,
+	publicQuizQuerySchema,
 	quizIdParamsSchema,
 	remoteImageInputSchema,
 	updateQuizInputSchema,
@@ -54,11 +55,27 @@ router.put(
 	QuizController.updateItemInfo,
 )
 
-// Get quizes
-router.get('/', QuizController.getQuizes)
+// Get published quizzes
+router.get('/', validate('query', publicQuizQuerySchema), QuizController.getQuizes)
 
 // Get my quizes
 router.get('/me', protect, QuizController.getMyQuizes)
+
+// Publish quiz
+router.put(
+	'/:quizId/publish',
+	protect,
+	validate('params', quizIdParamsSchema),
+	QuizController.publishQuiz,
+)
+
+// Unpublish quiz
+router.delete(
+	'/:quizId/publish',
+	protect,
+	validate('params', quizIdParamsSchema),
+	QuizController.unpublishQuiz,
+)
 
 // Get quiz by id
 router.get(

@@ -49,6 +49,53 @@
 				</div>
 
 				<div class="flex w-full flex-col gap-3">
+					<div
+						class="rounded-xl border p-4"
+						:class="
+							quiz.published
+								? 'border-emerald-500/30 bg-emerald-500/10'
+								: 'border-gray-700 bg-gray-900'
+						"
+					>
+						<div class="flex items-center justify-between gap-3">
+							<div>
+								<p
+									class="font-semibold"
+									:class="quiz.published ? 'text-emerald-300' : 'text-gray-200'"
+								>
+									{{ quiz.published ? 'Bu liste yayında' : 'Bu liste taslak' }}
+								</p>
+								<p class="mt-1 text-xs leading-5 text-gray-500">
+									<template v-if="quiz.published">
+										Herkes keşfedebilir ve oyun odası açabilir.
+									</template>
+									<template v-else-if="missingImageCount">
+										Yayınlamak için {{ missingImageCount }} seçeneğe daha görsel ekle.
+									</template>
+									<template v-else> Liste yayınlanmaya hazır. </template>
+								</p>
+							</div>
+							<UIcon
+								:name="quiz.published ? 'heroicons:globe-alt' : 'heroicons:lock-closed'"
+								:class="quiz.published ? 'text-emerald-400' : 'text-gray-500'"
+								:size="26"
+							/>
+						</div>
+						<UButton
+							class="mt-4"
+							:color="quiz.published ? 'red' : 'green'"
+							:variant="quiz.published ? 'outline' : 'solid'"
+							:loading="publishing"
+							:disabled="!quiz.published && missingImageCount > 0"
+							:class="{
+								'cursor-not-allowed opacity-50': !quiz.published && missingImageCount > 0,
+							}"
+							@click="togglePublish"
+						>
+							{{ quiz.published ? 'Yayından Kaldır' : 'Listeyi Yayınla' }}
+						</UButton>
+					</div>
+
 					<UInput v-model="payload.title" placeholder="Quiz Başlığı" class="w-full" />
 					<UTextarea
 						v-model="payload.description"
@@ -113,6 +160,7 @@ const props = defineProps({
 })
 
 const isBulkUpdateFormVisible = ref(false)
+const publishing = ref(false)
 
 const emit = defineEmits(['close', 'reload'])
 
@@ -124,6 +172,10 @@ const payload = ref({
 	title: props.quiz.title,
 	description: props.quiz.description,
 })
+
+const missingImageCount = computed(
+	() => props.quiz.items.filter(item => !item.image).length,
+)
 
 function updateCover(event) {
 	useAsync(
@@ -171,6 +223,26 @@ function createSession() {
 		async () => {
 			const code = await quizStore.createSession(props.quiz.id)
 			navigateTo(`/sessions/${code}`)
+		},
+		{ setLoader: useLoading.set },
+	)
+}
+
+function togglePublish() {
+	useAsync(
+		async () => {
+			publishing.value = true
+			try {
+				if (props.quiz.published) {
+					await quizStore.unpublishQuiz(props.quiz.id)
+				} else {
+					await quizStore.publishQuiz(props.quiz.id)
+				}
+				await quizStore.getMyQuizes()
+				emit('reload')
+			} finally {
+				publishing.value = false
+			}
 		},
 		{ setLoader: useLoading.set },
 	)

@@ -3,6 +3,7 @@ import ApiRes from 'ApiRes'
 
 import AsyncMd from '../middleware/async'
 import * as QuizService from '../services/QuizService'
+import type { PublicQuizQuery } from '@fikifor/contracts'
 import { numberParam } from '../utils/request'
 
 // Create quiz
@@ -82,8 +83,9 @@ export const updateItemInfo = AsyncMd(async (req: ApiReq, res: ApiRes) => {
 
 // Get quizes
 export const getQuizes = AsyncMd(async (req: ApiReq, res: ApiRes) => {
-	const quizes = await QuizService.getQuizes()
-	res.status(200).json({ success: true, data: quizes })
+	const query = req.query as unknown as PublicQuizQuery
+	const { items, total } = await QuizService.getQuizes(query)
+	res.status(200).json({ success: true, data: items, total })
 })
 
 // Get my quizes
