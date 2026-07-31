@@ -241,6 +241,11 @@ export interface SessionMatch {
 	secondItem: QuizItem
 }
 
+export interface SessionMatchResult {
+	matchId: number
+	winnerId: number
+}
+
 export interface GameSession {
 	id: number
 	code: string
@@ -279,7 +284,7 @@ export interface ServerToClientEvents {
 	'session:counter': (counter: number) => void
 	'session:started': (match: SessionMatch) => void
 	'session:voted': (vote: SessionVote) => void
-	'session:ended': () => void
+	'session:ended': (result: SessionMatchResult) => void
 	'session:match:done': () => void
 	'session:next': (match: SessionMatch) => void
 	'session:round': (round: { next: SessionMatch; cluster: number }) => void

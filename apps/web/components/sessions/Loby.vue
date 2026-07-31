@@ -41,6 +41,7 @@
 <script setup>
 import { useAuthStore } from '~/store/auth'
 import { useSessionStore } from '~/store/session'
+import { unlockGameAudio } from '~/utils/gameAudio'
 
 const LinkSpan = ref()
 const link = computed(() =>
@@ -67,6 +68,7 @@ function copyLink() {
 }
 
 function start() {
+	void unlockGameAudio()
 	useSocket().emit('session:start', { code: session.value.code })
 }
 </script>

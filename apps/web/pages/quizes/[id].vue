@@ -212,6 +212,7 @@
 <script setup lang="ts">
 import { useAuthStore } from '~/store/auth'
 import { useQuizStore } from '~/store/quizes'
+import { unlockGameAudio } from '~/utils/gameAudio'
 
 const route = useRoute()
 const authStore = useAuthStore()
@@ -269,6 +270,7 @@ async function load() {
 }
 
 async function start() {
+	void unlockGameAudio()
 	if (!authStore.isLoggedIn) {
 		await navigateTo({ path: '/login', query: { redirect: route.fullPath } })
 		return

@@ -51,8 +51,6 @@
 import { useAuthStore } from '~/store/auth'
 const authStore = useAuthStore()
 
-const status = ref()
-
 const props = defineProps({
 	item: {
 		type: Object,
@@ -66,23 +64,16 @@ const props = defineProps({
 		type: Boolean,
 		default: false,
 	},
+	status: {
+		type: String,
+		default: undefined,
+		validator: value => value === undefined || ['win', 'lose'].includes(value),
+	},
 })
 
 const isVoted = computed(() =>
 	props.votes?.some(v => v.participant?.user?.id === authStore.user.userId),
 )
 
-function win() {
-	status.value = 'win'
-	const audio = new Audio('/sounds/win.m4a')
-	audio.play().catch(() => undefined)
-}
-
-function lose() {
-	status.value = 'lose'
-}
-
 const emit = defineEmits(['vote'])
-
-defineExpose({ win, lose })
 </script>

@@ -58,6 +58,7 @@ export interface VoteOutcome {
 	vote: ContractSessionVote
 	sessionCode: string
 	matchCompleted: boolean
+	winnerId: number | null
 	transition: VoteTransition
 }
 
@@ -296,6 +297,7 @@ export async function submitVote(
 					vote: contractVote,
 					sessionCode: match.session.code,
 					matchCompleted: false,
+					winnerId: null,
 					transition: { type: 'none' },
 				}
 			}
@@ -332,6 +334,7 @@ export async function submitVote(
 					vote: contractVote,
 					sessionCode: match.session.code,
 					matchCompleted: true,
+					winnerId,
 					transition: { type: 'next', next: asContractMatch(nextMatch) },
 				}
 			}
@@ -345,6 +348,7 @@ export async function submitVote(
 					vote: contractVote,
 					sessionCode: match.session.code,
 					matchCompleted: true,
+					winnerId,
 					transition: { type: 'over', code: match.session.code },
 				}
 			}
@@ -386,6 +390,7 @@ export async function submitVote(
 				vote: contractVote,
 				sessionCode: match.session.code,
 				matchCompleted: true,
+				winnerId,
 				transition: { type: 'round', next: asContractMatch(next), cluster: newCluster },
 			}
 		},

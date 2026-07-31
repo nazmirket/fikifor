@@ -18,6 +18,7 @@ integration('Socket.IO session events', () => {
 	let runtime: Awaited<ReturnType<typeof import('../ws/server').createSocketRuntime>>
 	let client: Socket<ServerToClientEvents, ClientToServerEvents>
 	let token: string
+	let quizItemIds: number[]
 	const code = 'SOCKETTEST0001'
 
 	beforeAll(async () => {
@@ -48,8 +49,11 @@ integration('Socket.IO session events', () => {
 				title: 'Socket test',
 				description: 'Socket event fixture',
 				size: 32,
+				items: { create: [{ title: 'First' }, { title: 'Second' }] },
 			},
+			include: { items: { orderBy: { id: 'asc' } } },
 		})
+		quizItemIds = quiz.items.map(item => item.id)
 		await prisma.session.create({
 			data: { code, quizId: quiz.id, adminId: user.id, cluster: 16 },
 		})
@@ -93,5 +97,35 @@ integration('Socket.IO session events', () => {
 		})
 		expect(result.ok).toBe(false)
 		await expect(errorEvent).resolves.toMatchObject({ code: 'VALIDATION_ERROR' })
+	})
+
+	it('broadcasts the authoritative winner when a match completes', async () => {
+		const session = await prisma.session.findUniqueOrThrow({ where: { code } })
+		const match = await prisma.sessionMatch.create({
+			data: {
+				sessionId: session.id,
+				cluster: 1,
+				order: 1,
+				firstItemId: quizItemIds[0],
+				secondItemId: quizItemIds[1],
+			},
+		})
+		await prisma.session.update({
+			where: { id: session.id },
+			data: { started: true, cluster: 1 },
+		})
+
+		const completed = new Promise<{ matchId: number; winnerId: number }>(resolve => {
+			client.once('session:ended', resolve)
+		})
+		const result = await new Promise<SocketSuccess | SocketFailure>(resolve => {
+			client.emit('session:vote', { matchId: match.id, itemId: quizItemIds[0] }, resolve)
+		})
+
+		expect(result).toEqual({ ok: true })
+		await expect(completed).resolves.toEqual({
+			matchId: match.id,
+			winnerId: quizItemIds[0],
+		})
 	})
 })

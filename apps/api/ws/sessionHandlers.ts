@@ -96,9 +96,12 @@ export function registerSessionHandlers(io: FikiforServer, socket: FikiforSocket
 			if (!socket.rooms.has(room)) await socket.join(room)
 
 			io.to(room).emit('session:voted', outcome.vote)
-			if (!outcome.matchCompleted) return
+			if (!outcome.matchCompleted || !outcome.winnerId) return
 
-			io.to(room).emit('session:ended')
+			io.to(room).emit('session:ended', {
+				matchId: input.matchId,
+				winnerId: outcome.winnerId,
+			})
 			io.to(room).emit('session:match:done')
 
 			switch (outcome.transition.type) {

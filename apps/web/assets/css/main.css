@@ -18,7 +18,7 @@
 }
 
 .vs-loser {
-	animation: zoomOut 1000ms ease;
+	animation: zoomOut 1000ms ease forwards;
 	@apply divide-gray-900 border-gray-900 !bg-black;
 }
 

@@ -4,21 +4,18 @@ import type {
 	Participant,
 	ServerToClientEvents,
 	SessionMatch,
+	SessionMatchResult,
 	SessionVote,
 } from '@fikifor/contracts'
 import { io, type Socket } from 'socket.io-client'
 
 import { useAuthStore } from '~/store/auth'
 import { useSessionStore } from '~/store/session'
+import { playGameSound } from '~/utils/gameAudio'
 
 type FikiforSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
 const socket = shallowRef<FikiforSocket>()
-
-function playSound(path: string) {
-	const audio = new Audio(path)
-	audio.play().catch(() => undefined)
-}
 
 export default function (): FikiforSocket {
 	const authStore = useAuthStore()
@@ -36,7 +33,7 @@ export default function (): FikiforSocket {
 	socket.value.on('session:joined', (participants: Participant[]) => {
 		const session = useSessionStore().session
 		if (session) session.participants = participants
-		playSound('/sounds/join.m4a')
+		void playGameSound('join')
 	})
 
 	socket.value.on('session:online', (username: string) => {
@@ -45,7 +42,7 @@ export default function (): FikiforSocket {
 		)
 		if (participant && !participant.online) {
 			participant.online = true
-			playSound('/sounds/join.m4a')
+			void playGameSound('join')
 		}
 	})
 
@@ -76,9 +73,12 @@ export default function (): FikiforSocket {
 		else match.votes[index] = vote
 	})
 
-	socket.value.on('session:ended', () => {
+	socket.value.on('session:ended', (result: SessionMatchResult) => {
 		const match = useSessionStore().match
-		if (match) match.completed = true
+		if (!match || match.id !== result.matchId) return
+		match.winnerId = result.winnerId
+		match.completed = true
+		void playGameSound('win')
 	})
 
 	const transition = (match: SessionMatch) => {

@@ -1,24 +1,27 @@
 <template>
 	<div
 		v-if="match"
-		ref="Container"
 		:key="match?.id"
-		class="flex w-full gap-6 transition-all duration-1000 max-sm:flex-col max-sm:gap-2"
+		class="match-stage w-full gap-6 max-sm:gap-2"
+		:class="{
+			'match-stage--first': winnerPosition === 'first',
+			'match-stage--second': winnerPosition === 'second',
+		}"
 	>
 		<SessionItem
-			ref="Node1"
-			class="w-1/2 overflow-hidden max-sm:w-full"
+			class="match-card overflow-hidden"
 			:item="firstItem"
 			:votes="voters1"
 			:completed="match.completed"
+			:status="itemStatus(firstItem.id)"
 			@vote="() => vote(firstItem.id)"
 		/>
 		<SessionItem
-			ref="Node2"
-			class="w-1/2 overflow-hidden max-sm:w-full"
+			class="match-card overflow-hidden"
 			:item="secondItem"
 			:votes="voters2"
 			:completed="match.completed"
+			:status="itemStatus(secondItem.id)"
 			@vote="() => vote(secondItem.id)"
 		/>
 	</div>
@@ -26,15 +29,11 @@
 
 <script setup>
 import { useSessionStore } from '~/store/session'
+import { unlockGameAudio } from '~/utils/gameAudio'
+
 const sessionStore = useSessionStore()
 
-const Node1 = ref()
-const Node2 = ref()
-const Container = ref()
-
-const match = computed(() =>
-	sessionStore.match ? structuredClone(toRaw(sessionStore.match)) : null,
-)
+const match = computed(() => sessionStore.match)
 const votes = computed(() => match.value?.votes)
 
 const firstItem = computed(() => match.value?.firstItem)
@@ -48,45 +47,53 @@ const voters2 = computed(() =>
 	votes.value?.filter(v => v.selectionId === secondItem.value?.id),
 )
 
+const winnerPosition = computed(() => {
+	if (!match.value?.completed || !match.value.winnerId) return
+	return match.value.winnerId === firstItem.value?.id ? 'first' : 'second'
+})
+
+function itemStatus(itemId) {
+	if (!match.value?.completed || !match.value.winnerId) return
+	return match.value.winnerId === itemId ? 'win' : 'lose'
+}
+
 function vote(itemId) {
+	if (!match.value || match.value.completed) return
+	void unlockGameAudio()
 	useSocket().emit('session:vote', {
 		matchId: match.value.id,
 		itemId,
 	})
 }
-
-watch(
-	match,
-	(n, o) => {
-		if (o && !o?.completed && n?.completed) {
-			// If first item has more votes
-			if (voters1.value.length > voters2.value.length) {
-				Node1.value.win()
-				Node2.value.lose()
-				setTimeout(() => {
-					Node2.value.$el.style.width = '0%'
-					Node2.value.$el.style.borderWidth = '0px'
-					Node2.value.$el.style.padding = '0px'
-					Container.value.style.columnGap = '0px'
-					Container.value.style.rowGap = '0px'
-					Node1.value.$el.style.width = '100%'
-				}, 500)
-			}
-			// If second item has more votes
-			else if (voters2.value.length > voters1.value.length) {
-				Node2.value.win()
-				Node1.value.lose()
-				setTimeout(() => {
-					Node1.value.$el.style.width = '0%'
-					Node1.value.$el.style.borderWidth = '0px'
-					Node1.value.$el.style.padding = '0px'
-					Container.value.style.columnGap = '0px'
-					Container.value.style.rowGap = '0px'
-					Node2.value.$el.style.width = '100%'
-				}, 500)
-			}
-		}
-	},
-	{ deep: true, immediate: true },
-)
 </script>
+
+<style scoped>
+.match-stage {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+	transition:
+		grid-template-columns 700ms ease,
+		gap 700ms ease;
+}
+
+.match-stage--first {
+	grid-template-columns: minmax(0, 1fr) minmax(0, 0fr);
+	gap: 0;
+}
+
+.match-stage--second {
+	grid-template-columns: minmax(0, 0fr) minmax(0, 1fr);
+	gap: 0;
+}
+
+.match-card {
+	min-width: 0;
+}
+
+@media (max-width: 639px) {
+	.match-stage {
+		display: flex;
+		flex-direction: column;
+	}
+}
+</style>
