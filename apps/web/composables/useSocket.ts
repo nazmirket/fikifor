@@ -16,6 +16,38 @@ import { playGameSound } from '~/utils/gameAudio'
 type FikiforSocket = Socket<ServerToClientEvents, ClientToServerEvents>
 
 const socket = shallowRef<FikiforSocket>()
+let joinedConnection: string | undefined
+let joinedCode: string | undefined
+let transitionTimer: ReturnType<typeof setTimeout> | undefined
+let pendingTransition: string | undefined
+
+function clearTransition() {
+	if (transitionTimer) clearTimeout(transitionTimer)
+	transitionTimer = undefined
+	pendingTransition = undefined
+}
+
+function scheduleTransition(key: string, work: () => void) {
+	if (pendingTransition === key) return
+	clearTransition()
+	pendingTransition = key
+	useSessionStore().phase = 'transitioning'
+	transitionTimer = setTimeout(() => {
+		transitionTimer = undefined
+		pendingTransition = undefined
+		work()
+	}, 2_500)
+}
+
+export function joinCurrentSession() {
+	const currentSocket = socket.value
+	const session = useSessionStore().session
+	if (!currentSocket?.connected || !currentSocket.id || !session || session.ended) return
+	if (joinedConnection === currentSocket.id && joinedCode === session.code) return
+	joinedConnection = currentSocket.id
+	joinedCode = session.code
+	currentSocket.emit('session:join', { code: session.code })
+}
 
 export default function (): FikiforSocket {
 	const authStore = useAuthStore()
@@ -29,10 +61,31 @@ export default function (): FikiforSocket {
 		autoConnect: false,
 		auth: { token: authStore.token },
 	})
+	socket.value.on('connect', () => {
+		joinedConnection = undefined
+		joinedCode = undefined
+		clearTransition()
+		joinCurrentSession()
+	})
+	socket.value.on('disconnect', () => {
+		joinedConnection = undefined
+		joinedCode = undefined
+		clearTransition()
+	})
 
 	socket.value.on('session:joined', (participants: Participant[]) => {
 		const session = useSessionStore().session
 		if (session) session.participants = participants
+	})
+
+	socket.value.on('session:participant', (participant: Participant) => {
+		const session = useSessionStore().session
+		if (!session) return
+		const index = session.participants.findIndex(
+			(entry: Participant) => entry.id === participant.id,
+		)
+		if (index === -1) session.participants.push(participant)
+		else session.participants[index] = participant
 		void playGameSound('join')
 	})
 
@@ -54,12 +107,18 @@ export default function (): FikiforSocket {
 	})
 
 	socket.value.on('session:counter', (counter: number) => {
-		useSessionStore().counter = counter || undefined
+		const store = useSessionStore()
+		store.counter = counter || undefined
+		if (counter > 0) store.phase = 'countdown'
 	})
 
 	socket.value.on('session:started', (match: SessionMatch) => {
-		useSessionStore().match = match
-		const session = useSessionStore().session
+		clearTransition()
+		const store = useSessionStore()
+		store.counter = undefined
+		store.match = match
+		store.phase = 'playing'
+		const session = store.session
 		if (session) session.started = true
 	})
 
@@ -78,36 +137,40 @@ export default function (): FikiforSocket {
 		if (!match || match.id !== result.matchId) return
 		match.winnerId = result.winnerId
 		match.completed = true
+		useSessionStore().phase = 'resolved'
 		void playGameSound('win')
 	})
 
 	const transition = (match: SessionMatch) => {
-		const current = useSessionStore().match
+		const store = useSessionStore()
+		const current = store.match
 		if (current) current.completed = true
-		setTimeout(() => (useSessionStore().match = match), 2_500)
+		scheduleTransition(`next:${current?.id ?? 0}:${match.id}`, () => {
+			store.match = match
+			store.phase = 'playing'
+		})
 	}
 	socket.value.on('session:next', transition)
 	socket.value.on('session:round', (round: { next: SessionMatch; cluster: number }) => {
-		const current = useSessionStore().match
+		const store = useSessionStore()
+		const current = store.match
 		if (current) current.completed = true
-		setTimeout(() => {
-			const session = useSessionStore().session
+		scheduleTransition(`round:${current?.id ?? 0}:${round.next.id}`, () => {
+			const session = store.session
 			if (session) session.cluster = round.cluster
-			useSessionStore().match = round.next
-		}, 2_500)
+			store.match = round.next
+			store.phase = 'playing'
+		})
 	})
 	socket.value.on('session:over', (code: string) => {
-		const session = useSessionStore().session
+		const store = useSessionStore()
+		const session = store.session
 		if (session?.code !== code) return
-		const match = useSessionStore().match
+		const match = store.match
 		if (match) match.completed = true
-		setTimeout(
-			() =>
-				useSessionStore()
-					.over()
-					.catch(() => undefined),
-			2_500,
-		)
+		scheduleTransition(`over:${match?.id ?? 0}:${code}`, () => {
+			void store.over().catch(() => undefined)
+		})
 	})
 	socket.value.on('session:error', (error: ApiError) => {
 		useToast().add({ title: 'Error', description: error.message })

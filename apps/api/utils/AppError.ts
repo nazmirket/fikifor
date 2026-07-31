@@ -29,6 +29,8 @@ export const forbidden = (message = 'Forbidden') =>
 	new AppError(403, 'FORBIDDEN', message)
 export const notFound = (message = 'Not found') => new AppError(404, 'NOT_FOUND', message)
 export const conflict = (message: string) => new AppError(409, 'CONFLICT', message)
+export const tooManyRequests = (message = 'Too many requests') =>
+	new AppError(429, 'RATE_LIMITED', message)
 
 export function errorPayload(error: unknown): ApiError {
 	if (error instanceof AppError) return error.toJSON()

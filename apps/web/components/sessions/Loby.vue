@@ -1,7 +1,13 @@
 <template>
 	<div v-if="quiz" class="flex w-full max-w-[600px] flex-col gap-6 rounded-lg border p-6">
 		<div class="flex flex-col gap-4 rounded-lg border p-3">
-			<Image :file="quiz?.cover" class="aspect-default" />
+			<Image
+				:file="quiz?.cover"
+				:is-public="quiz.published"
+				eager
+				:width="640"
+				class="aspect-default"
+			/>
 			<span class="text-center text-xl">
 				{{ quiz.title }}
 			</span>
@@ -32,7 +38,7 @@
 			<UButton :disabled="true"> Başlıyor ({{ sessionStore.counter }} sn) </UButton>
 		</div>
 
-		<div v-else-if="session.adminId === authStore.user.userId">
+		<div v-else-if="!session.started && session.adminId === authStore.user.userId">
 			<UButton class="w-full" color="green" @click="start"> Başlat </UButton>
 		</div>
 	</div>

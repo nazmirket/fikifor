@@ -15,6 +15,8 @@ import { logger } from '../utils/logger'
 
 const storageRoot = path.resolve(process.cwd(), 'files')
 const maxInputPixels = 40_000_000
+const imageWidths = [320, 640, 1280] as const
+const pendingVariants = new Map<string, Promise<string>>()
 
 function currentFolder() {
 	const now = new Date()
@@ -209,14 +211,43 @@ export async function uploadFromLink(link: string) {
 
 export async function remove(image: Pick<Image, 'id' | 'folder' | 'name'> | null) {
 	if (!image) return
-	await fs.unlink(storagePath(image.folder, image.name)).catch(error => {
-		if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
-			logger.warn({ err: error, imageId: image.id }, 'Could not remove image file')
-		}
-	})
+	const original = storagePath(image.folder, image.name)
+	await Promise.all(
+		[original, ...imageWidths.map(width => `${original}.${width}.jpeg`)].map(filePath =>
+			fs.unlink(filePath).catch(error => {
+				if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+					logger.warn({ err: error, imageId: image.id }, 'Could not remove image file')
+				}
+			}),
+		),
+	)
 	await Prisma.image.delete({ where: { id: image.id } }).catch(error => {
 		logger.warn({ err: error, imageId: image.id }, 'Could not remove image record')
 	})
+}
+
+export async function optimized(filePath: string, width: number) {
+	if (!imageWidths.includes(width as (typeof imageWidths)[number])) {
+		throw badRequest('Unsupported image width')
+	}
+	const target = `${filePath}.${width}.jpeg`
+	try {
+		await fs.access(target)
+		return target
+	} catch {
+		// Generate below.
+	}
+
+	const existing = pendingVariants.get(target)
+	if (existing) return existing
+	const generation = sharp(filePath, { failOn: 'error' })
+		.resize({ width, withoutEnlargement: true })
+		.jpeg({ quality: 82, mozjpeg: true })
+		.toFile(target)
+		.then(() => target)
+		.finally(() => pendingVariants.delete(target))
+	pendingVariants.set(target, generation)
+	return generation
 }
 
 export async function access(name: string, userId?: number) {

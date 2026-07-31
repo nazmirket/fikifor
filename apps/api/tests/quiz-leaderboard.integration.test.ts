@@ -134,6 +134,28 @@ integration('participant-weighted quiz leaderboard', () => {
 			[itemIds[1], itemIds[3], itemIds[0], itemIds[2]],
 			participantIds.slice(0, 4),
 		)
+		await prisma.$transaction([
+			prisma.quiz.update({
+				where: { id: quizId },
+				data: { completedSessionCount: 3, participantWeight: 11 },
+			}),
+			prisma.quizItem.update({
+				where: { id: itemIds[0] },
+				data: { sessionWins: 2, weightedScore: 36, weightedPlacement: 19 },
+			}),
+			prisma.quizItem.update({
+				where: { id: itemIds[1] },
+				data: { sessionWins: 1, weightedScore: 32, weightedPlacement: 23 },
+			}),
+			prisma.quizItem.update({
+				where: { id: itemIds[2] },
+				data: { sessionWins: 0, weightedScore: 27, weightedPlacement: 28 },
+			}),
+			prisma.quizItem.update({
+				where: { id: itemIds[3] },
+				data: { sessionWins: 0, weightedScore: 26, weightedPlacement: 29 },
+			}),
+		])
 	})
 
 	afterAll(async () => {

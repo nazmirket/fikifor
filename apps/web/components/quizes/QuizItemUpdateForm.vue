@@ -73,7 +73,13 @@
 				<UIcon name="mage:image" class="text-gray-400" :size="48" />
 				<span class="text-center text-sm"> Resim yüklemek için tıkla </span>
 			</div>
-			<Image v-else :file="item.image" class="aspect-default h-full w-full" />
+			<Image
+				v-else
+				:file="item.image"
+				:is-public="isPublic"
+				:width="640"
+				class="aspect-default h-full w-full"
+			/>
 		</div>
 		<UInput
 			v-model="payload.title"
@@ -111,6 +117,10 @@ const props = defineProps({
 	item: {
 		type: Object,
 		required: true,
+	},
+	isPublic: {
+		type: Boolean,
+		default: false,
 	},
 })
 

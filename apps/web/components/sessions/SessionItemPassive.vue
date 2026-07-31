@@ -19,6 +19,8 @@
 			<Image
 				v-if="item.image"
 				:file="item.image"
+				:is-public="isPublic"
+				eager
 				:class="{
 					'border-2 !border-amber-500': isFavorite,
 				}"
@@ -59,6 +61,10 @@ defineProps({
 		required: true,
 	},
 	isFavorite: {
+		type: Boolean,
+		default: false,
+	},
+	isPublic: {
 		type: Boolean,
 		default: false,
 	},

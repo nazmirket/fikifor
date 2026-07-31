@@ -14,6 +14,7 @@
 			:votes="voters1"
 			:completed="match.completed"
 			:status="itemStatus(firstItem.id)"
+			:is-public="sessionStore.session?.quiz.published"
 			@vote="() => vote(firstItem.id)"
 		/>
 		<SessionItem
@@ -22,6 +23,7 @@
 			:votes="voters2"
 			:completed="match.completed"
 			:status="itemStatus(secondItem.id)"
+			:is-public="sessionStore.session?.quiz.published"
 			@vote="() => vote(secondItem.id)"
 		/>
 	</div>

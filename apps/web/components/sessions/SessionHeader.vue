@@ -20,6 +20,12 @@
 				/
 				{{ sessionStore.match?.cluster }}
 			</span>
+			<span
+				v-if="deadlineSeconds !== undefined"
+				class="rounded-full border border-gray-700 px-2.5 py-1 text-xs text-gray-400"
+			>
+				{{ deadlineSeconds }} sn
+			</span>
 		</div>
 	</div>
 </template>
@@ -29,4 +35,24 @@ import { useSessionStore } from '~/store/session'
 const sessionStore = useSessionStore()
 
 const participants = computed(() => sessionStore.session.participants)
+const deadlineSeconds = ref()
+let deadlineTimer
+
+function updateDeadline() {
+	const deadlineAt = sessionStore.match?.deadlineAt
+	if (!deadlineAt || sessionStore.match?.completed) {
+		deadlineSeconds.value = undefined
+		return
+	}
+	deadlineSeconds.value = Math.max(
+		0,
+		Math.ceil((new Date(deadlineAt).getTime() - Date.now()) / 1_000),
+	)
+}
+
+watch(() => sessionStore.match?.deadlineAt, updateDeadline, { immediate: true })
+onMounted(() => {
+	deadlineTimer = setInterval(updateDeadline, 250)
+})
+onBeforeUnmount(() => clearInterval(deadlineTimer))
 </script>

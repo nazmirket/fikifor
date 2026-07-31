@@ -27,6 +27,8 @@
 						<Image
 							:file="quiz.cover"
 							:alt="quiz.title"
+							:is-public="quiz.published"
+							:width="1280"
 							class="h-full w-full rounded-none"
 						/>
 					</div>
@@ -153,6 +155,8 @@
 											v-if="entry.item.image"
 											:file="entry.item.image"
 											:alt="entry.item.title ?? 'Quiz seçeneği'"
+											:is-public="quiz.published"
+											:width="320"
 											class="h-12 w-16 shrink-0 rounded-lg"
 										/>
 										<div

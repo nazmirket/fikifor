@@ -8,6 +8,7 @@ model Session {
     participants Participant[]
     matches      SessionMatch[]
     started      Boolean        @default(false)
+    startsAt     DateTime?
     ended        Boolean        @default(false)
     cluster      Int
     favoriteId   Int?

@@ -29,19 +29,6 @@ interface PublicQuizRow {
 	total: number
 }
 
-interface QuizLeaderboardRow {
-	itemId: number
-	itemTitle: string | null
-	imageId: number | null
-	imageName: string | null
-	imageFolder: string | null
-	sessionWins: number
-	weightedScore: number
-	weightedPlacement: number
-	completedSessions: number
-	participantWeight: number
-}
-
 function publicQuizOrder(query: PublicQuizQuery) {
 	const key = `${query.sortBy}:${query.sortOrder}`
 	switch (key) {
@@ -432,98 +419,42 @@ export async function getQuizLeaderboard(
 			id: quizId,
 			OR: [...(userId ? [{ ownerId: userId }] : []), { published: true }],
 		},
-		select: { id: true, size: true },
+		select: {
+			id: true,
+			size: true,
+			completedSessionCount: true,
+			participantWeight: true,
+			items: {
+				select: {
+					id: true,
+					title: true,
+					image: true,
+					sessionWins: true,
+					weightedScore: true,
+					weightedPlacement: true,
+				},
+			},
+		},
 	})
 	if (!quiz) throw notFound('Quiz not found')
 
-	const rows = await Prisma.$queryRaw<QuizLeaderboardRow[]>(PrismaQuery.sql`
-		WITH "completedSessions" AS (
-			SELECT
-				s."id",
-				s."favoriteId",
-				COUNT(p."id")::integer AS "participantCount"
-			FROM "Session" s
-			LEFT JOIN "Participant" p ON p."sessionId" = s."id"
-			WHERE
-				s."quizId" = ${quizId}
-				AND s."ended" = true
-				AND s."favoriteId" IS NOT NULL
-			GROUP BY s."id"
-		),
-		"stats" AS (
-			SELECT
-				COUNT(*)::integer AS "completedSessions",
-				COALESCE(SUM("participantCount"), 0)::integer AS "participantWeight"
-			FROM "completedSessions"
-		),
-		"placements" AS (
-			SELECT
-				qi."id" AS "itemId",
-				completed."id" AS "sessionId",
-				completed."participantCount",
-				CASE
-					WHEN completed."favoriteId" = qi."id" THEN 1
-					ELSE eliminated."cluster" + 1
-				END::integer AS "placement"
-			FROM "QuizItem" qi
-			CROSS JOIN "completedSessions" completed
-			LEFT JOIN LATERAL (
-				SELECT match."cluster"
-				FROM "SessionMatch" match
-				WHERE
-					match."sessionId" = completed."id"
-					AND match."completed" = true
-					AND match."winnerId" IS NOT NULL
-					AND match."winnerId" <> qi."id"
-					AND (
-						match."firstItemId" = qi."id"
-						OR match."secondItemId" = qi."id"
-					)
-				LIMIT 1
-			) eliminated ON true
-			WHERE qi."quizId" = ${quizId}
-		),
-		"scores" AS (
-			SELECT
-				qi."id" AS "itemId",
-				qi."title" AS "itemTitle",
-				i."id" AS "imageId",
-				i."name" AS "imageName",
-				i."folder" AS "imageFolder",
-				COUNT(*) FILTER (WHERE placement."placement" = 1)::integer AS "sessionWins",
-				COALESCE(
-					SUM(
-						(${quiz.size + 1} - placement."placement")
-						* placement."participantCount"
-					),
-					0
-				)::integer AS "weightedScore",
-				COALESCE(
-					SUM(placement."placement" * placement."participantCount"),
-					0
-				)::integer AS "weightedPlacement"
-			FROM "QuizItem" qi
-			LEFT JOIN "Image" i ON i."id" = qi."imageId"
-			LEFT JOIN "placements" placement ON placement."itemId" = qi."id"
-			WHERE qi."quizId" = ${quizId}
-			GROUP BY qi."id", i."id"
-		)
-		SELECT scores.*, stats."completedSessions", stats."participantWeight"
-		FROM "scores" scores
-		CROSS JOIN "stats" stats
-		ORDER BY
-			scores."weightedScore" DESC,
-			scores."sessionWins" DESC,
-			LOWER(scores."itemTitle") ASC NULLS LAST,
-			scores."itemId" ASC
-	`)
-
-	const completedSessions = rows[0]?.completedSessions ?? 0
-	const participantWeight = rows[0]?.participantWeight ?? 0
+	const completedSessions = quiz.completedSessionCount
+	const participantWeight = quiz.participantWeight
 	if (completedSessions === 0 || participantWeight === 0) {
 		return { completedSessions, participantWeight, entries: [] }
 	}
 
+	const rows = quiz.items.sort(
+		(first, second) =>
+			second.weightedScore - first.weightedScore ||
+			second.sessionWins - first.sessionWins ||
+			(first.title === null
+				? 1
+				: second.title === null
+					? -1
+					: first.title.localeCompare(second.title)) ||
+			first.id - second.id,
+	)
 	let previousScore: number | undefined
 	let previousWins: number | undefined
 	let currentRank = 0
@@ -537,16 +468,9 @@ export async function getQuizLeaderboard(
 		return {
 			rank: currentRank,
 			item: {
-				id: row.itemId,
-				title: row.itemTitle,
-				image:
-					row.imageId && row.imageName && row.imageFolder
-						? {
-								id: row.imageId,
-								name: row.imageName,
-								folder: row.imageFolder,
-							}
-						: null,
+				id: row.id,
+				title: row.title,
+				image: row.image,
 			},
 			sessionWins: row.sessionWins,
 			averageRank: Number((row.weightedPlacement / participantWeight).toFixed(2)),

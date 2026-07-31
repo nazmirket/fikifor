@@ -43,6 +43,8 @@
 						v-if="quiz?.cover"
 						:key="quiz?.cover?.name"
 						:file="quiz?.cover"
+						:is-public="quiz.published"
+						:width="640"
 						class="aspect-default h-[200px]"
 					/>
 					<div v-else class="aspect-default w-full" />
@@ -118,7 +120,7 @@
 			class="grid w-full grid-cols-4 gap-3 overflow-y-auto p-3 max-xl:grid-cols-2 max-lg:grid-cols-1"
 		>
 			<template v-for="item of quiz.items" :key="item.id">
-				<QuizItemUpdateForm :item="item" :quiz-id="quiz.id" />
+				<QuizItemUpdateForm :item="item" :quiz-id="quiz.id" :is-public="quiz.published" />
 			</template>
 		</div>
 	</div>

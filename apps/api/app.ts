@@ -12,6 +12,7 @@ import SessionRouter from './routes/v1/sessions'
 import ErrorMd from './middleware/error'
 import { forbidden, notFound } from './utils/AppError'
 import { requestLogger } from './utils/logger'
+import { renderMetrics } from './utils/metrics'
 
 export function createApp() {
 	const app = express()
@@ -48,6 +49,22 @@ export function createApp() {
 				error: { code: 'NOT_READY', message: 'Database is unavailable' },
 			})
 		}
+	})
+	app.get('/metrics', async (_req, res) => {
+		const activeSessions = await Prisma.session.count({
+			where: { started: true, ended: false },
+		})
+		res
+			.type('text/plain; version=0.0.4')
+			.status(200)
+			.send(
+				renderMetrics({
+					fikifor_active_sessions: {
+						help: 'Started game sessions that have not ended',
+						value: activeSessions,
+					},
+				}),
+			)
 	})
 
 	const authLimiter = rateLimit({

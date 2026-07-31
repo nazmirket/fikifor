@@ -93,6 +93,8 @@
 					<Image
 						:file="quiz.cover"
 						:alt="quiz.title"
+						is-public
+						:width="640"
 						class="h-full w-full rounded-none transition duration-300 group-hover:scale-[1.02]"
 					/>
 					<span

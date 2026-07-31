@@ -11,6 +11,7 @@ model SessionMatch {
     secondItem   QuizItem      @relation("Match2", fields: [secondItemId], references: [id])
     winnerId     Int?
     winner       QuizItem?     @relation("MatchWinner", fields: [winnerId], references: [id])
+    deadlineAt   DateTime?
     votes        SessionVote[]
     // Data tracking fields
     createdAt    DateTime      @default(now())
@@ -18,4 +19,5 @@ model SessionMatch {
 
     @@unique([sessionId, order, cluster])
     @@index([sessionId, cluster, completed, order])
+    @@index([completed, deadlineAt])
 }

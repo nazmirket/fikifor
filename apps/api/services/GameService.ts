@@ -6,8 +6,10 @@ import type {
 } from '@fikifor/contracts'
 import { Prisma as PrismaTypes } from '@prisma/client'
 
+import { env } from '../config/env'
 import Prisma from '../prisma'
 import { badRequest, conflict, forbidden, notFound } from '../utils/AppError'
+import { gameMetrics } from '../utils/metrics'
 
 export const matchSelect = PrismaTypes.validator<PrismaTypes.SessionMatchSelect>()({
 	id: true,
@@ -15,6 +17,7 @@ export const matchSelect = PrismaTypes.validator<PrismaTypes.SessionMatchSelect>
 	cluster: true,
 	completed: true,
 	winnerId: true,
+	deadlineAt: true,
 	votes: {
 		select: {
 			id: true,
@@ -62,8 +65,59 @@ export interface VoteOutcome {
 	transition: VoteTransition
 }
 
+export interface DeadlineOutcome extends VoteResolution {
+	matchId: number
+	sessionCode: string
+}
+
+export interface PendingMatchDeadline {
+	matchId: number
+	deadlineAt: Date
+}
+
+interface VoteMatchRow {
+	id: number
+	sessionId: number
+	cluster: number
+	completed: boolean
+	firstItemId: number
+	secondItemId: number
+	deadlineAt: Date | null
+	isCurrent: boolean
+	sessionCode: string
+	sessionCluster: number
+	sessionEnded: boolean
+	sessionStartsAt: Date | null
+	participantCount: number
+	participantId: number | null
+	participantUserId: number | null
+	participantUsername: string | null
+}
+
+interface FinalizationMatchRow {
+	id: number
+	sessionId: number
+	cluster: number
+	completed: boolean
+	firstItemId: number
+	secondItemId: number
+	deadlineAt: Date | null
+	isCurrent: boolean
+	sessionCode: string
+	sessionCluster: number
+	sessionEnded: boolean
+	sessionQuizId: number
+	participantCount: number
+}
+
+interface VoteResolution {
+	matchCompleted: boolean
+	winnerId: number | null
+	transition: VoteTransition
+}
+
 function asContractMatch(match: MatchRecord): ContractSessionMatch {
-	return match as ContractSessionMatch
+	return match as unknown as ContractSessionMatch
 }
 
 function shuffle<T>(values: T[]) {
@@ -84,6 +138,10 @@ function pairs(values: number[]) {
 	return result
 }
 
+function nextDeadline() {
+	return new Date(Date.now() + env.matchDeadlineMs)
+}
+
 export function selectWinner(
 	firstItemId: number,
 	secondItemId: number,
@@ -95,26 +153,274 @@ export function selectWinner(
 	return randomInt(2) === 0 ? firstItemId : secondItemId
 }
 
-async function sessionLock(tx: PrismaTypes.TransactionClient, sessionId: number) {
+async function sessionLock(
+	tx: PrismaTypes.TransactionClient,
+	sessionId: number,
+	measure = false,
+) {
+	const startedAt = performance.now()
 	await tx.$executeRaw`SELECT pg_advisory_xact_lock(74201, CAST(${sessionId} AS integer))`
+	if (measure) gameMetrics.finalizationLockWait(performance.now() - startedAt)
+}
+
+function unresolvedVote(): VoteResolution {
+	return {
+		matchCompleted: false,
+		winnerId: null,
+		transition: { type: 'none' },
+	}
+}
+
+async function materializeSessionResult(
+	tx: PrismaTypes.TransactionClient,
+	sessionId: number,
+	quizId: number,
+	winnerId: number,
+	participantCount: number,
+) {
+	await tx.$executeRaw(
+		PrismaTypes.sql`
+			WITH placements AS (
+				SELECT
+					item."id" AS "itemId",
+					quiz."size",
+					CASE
+						WHEN item."id" = ${winnerId} THEN 1
+						ELSE eliminated."cluster" + 1
+					END::integer AS "placement"
+				FROM "QuizItem" item
+				INNER JOIN "Quiz" quiz ON quiz."id" = item."quizId"
+				LEFT JOIN LATERAL (
+					SELECT match."cluster"
+					FROM "SessionMatch" match
+					WHERE match."sessionId" = ${sessionId}
+						AND match."completed" = true
+						AND match."winnerId" IS NOT NULL
+						AND match."winnerId" <> item."id"
+						AND (
+							match."firstItemId" = item."id"
+							OR match."secondItemId" = item."id"
+						)
+					LIMIT 1
+				) eliminated ON true
+				WHERE item."quizId" = ${quizId}
+					AND (item."id" = ${winnerId} OR eliminated."cluster" IS NOT NULL)
+			)
+			UPDATE "QuizItem" item
+			SET
+				"sessionWins" = item."sessionWins"
+					+ CASE WHEN placements."placement" = 1 THEN 1 ELSE 0 END,
+				"weightedScore" = item."weightedScore"
+					+ (
+						placements."size" + 1 - placements."placement"
+					) * ${participantCount},
+				"weightedPlacement" = item."weightedPlacement"
+					+ placements."placement" * ${participantCount}
+			FROM placements
+			WHERE item."id" = placements."itemId"
+		`,
+	)
+	await tx.quiz.update({
+		where: { id: quizId },
+		data: {
+			completedSessionCount: { increment: 1 },
+			participantWeight: { increment: participantCount },
+		},
+	})
+}
+
+async function finalizeMatch(
+	matchId: number,
+	sessionId: number,
+): Promise<VoteResolution> {
+	return Prisma.$transaction(
+		async tx => {
+			// Only the short finalization path is serialized. Ordinary vote writes use
+			// compatible row-share locks and can proceed concurrently.
+			await sessionLock(tx, sessionId, true)
+			const [match] = await tx.$queryRaw<FinalizationMatchRow[]>(
+				PrismaTypes.sql`
+					SELECT
+						match."id",
+						match."sessionId",
+						match."cluster",
+						match."completed",
+						match."firstItemId",
+						match."secondItemId",
+						match."deadlineAt",
+						NOT EXISTS (
+							SELECT 1
+							FROM "SessionMatch" earlier
+							WHERE earlier."sessionId" = match."sessionId"
+								AND earlier."cluster" = match."cluster"
+								AND earlier."completed" = false
+								AND earlier."order" < match."order"
+						) AS "isCurrent",
+						session."code" AS "sessionCode",
+						session."cluster" AS "sessionCluster",
+						session."ended" AS "sessionEnded",
+						session."quizId" AS "sessionQuizId",
+						(
+							SELECT COUNT(*)::integer
+							FROM "Participant" participant
+							WHERE participant."sessionId" = session."id"
+						) AS "participantCount"
+					FROM "SessionMatch" match
+					INNER JOIN "Session" session ON session."id" = match."sessionId"
+					WHERE match."id" = ${matchId}
+					FOR UPDATE OF match
+				`,
+			)
+			if (!match) throw notFound('Match not found')
+			if (match.sessionId !== sessionId) throw conflict('Match session changed')
+			if (match.completed || match.sessionEnded) return unresolvedVote()
+			if (match.cluster !== match.sessionCluster || !match.isCurrent)
+				throw conflict('This is not the active match')
+
+			const groupedVotes = await tx.sessionVote.groupBy({
+				by: ['selectionId'],
+				where: { matchId },
+				_count: { _all: true },
+			})
+			const voteCount = groupedVotes.reduce(
+				(total, group) => total + group._count._all,
+				0,
+			)
+			const deadlineElapsed =
+				match.deadlineAt !== null && match.deadlineAt.getTime() <= Date.now()
+			if (voteCount < match.participantCount && !deadlineElapsed) {
+				return unresolvedVote()
+			}
+
+			const firstVotes =
+				groupedVotes.find(group => group.selectionId === match.firstItemId)?._count
+					._all ?? 0
+			const secondVotes =
+				groupedVotes.find(group => group.selectionId === match.secondItemId)?._count
+					._all ?? 0
+			const winnerId = selectWinner(
+				match.firstItemId,
+				match.secondItemId,
+				firstVotes,
+				secondVotes,
+			)
+
+			await tx.sessionMatch.update({
+				where: { id: match.id },
+				data: { completed: true, winnerId },
+			})
+
+			const nextMatch = await tx.sessionMatch.findFirst({
+				where: {
+					sessionId: match.sessionId,
+					cluster: match.sessionCluster,
+					completed: false,
+				},
+				orderBy: { order: 'asc' },
+				select: { id: true },
+			})
+			if (nextMatch) {
+				const next = await tx.sessionMatch.update({
+					where: { id: nextMatch.id },
+					data: { deadlineAt: nextDeadline() },
+					select: matchSelect,
+				})
+				return {
+					matchCompleted: true,
+					winnerId,
+					transition: { type: 'next', next: asContractMatch(next) },
+				}
+			}
+
+			if (match.sessionCluster === 1) {
+				await materializeSessionResult(
+					tx,
+					match.sessionId,
+					match.sessionQuizId,
+					winnerId,
+					match.participantCount,
+				)
+				await tx.session.update({
+					where: { id: match.sessionId },
+					data: { favoriteId: winnerId, ended: true, cluster: 0 },
+				})
+				return {
+					matchCompleted: true,
+					winnerId,
+					transition: { type: 'over', code: match.sessionCode },
+				}
+			}
+
+			const completedMatches = await tx.sessionMatch.findMany({
+				where: { sessionId: match.sessionId, cluster: match.sessionCluster },
+				orderBy: { order: 'asc' },
+				select: { winnerId: true },
+			})
+			const winners = completedMatches.map(entry => {
+				if (!entry.winnerId) throw conflict('Round contains a match without a winner')
+				return entry.winnerId
+			})
+			const newCluster = match.sessionCluster / 2
+			const nextPairs = pairs(shuffle(winners))
+			const deadlineAt = nextDeadline()
+
+			await tx.sessionMatch.deleteMany({
+				where: { sessionId: match.sessionId, cluster: newCluster },
+			})
+			await tx.sessionMatch.createMany({
+				data: nextPairs.map(([firstItemId, secondItemId], index) => ({
+					order: index + 1,
+					cluster: newCluster,
+					sessionId: match.sessionId,
+					firstItemId,
+					secondItemId,
+					deadlineAt: index === 0 ? deadlineAt : null,
+				})),
+			})
+			await tx.session.update({
+				where: { id: match.sessionId },
+				data: { cluster: newCluster },
+			})
+
+			const next = await tx.sessionMatch.findFirstOrThrow({
+				where: { sessionId: match.sessionId, cluster: newCluster, order: 1 },
+				select: matchSelect,
+			})
+			return {
+				matchCompleted: true,
+				winnerId,
+				transition: { type: 'round', next: asContractMatch(next), cluster: newCluster },
+			}
+		},
+		{ maxWait: 5_000, timeout: 15_000 },
+	)
 }
 
 export async function joinSession(code: string, userId: number) {
 	return Prisma.$transaction(async tx => {
 		const session = await tx.session.findUnique({
 			where: { code },
-			select: { id: true, code: true, started: true, ended: true },
+			select: {
+				id: true,
+				code: true,
+				cluster: true,
+				started: true,
+				startsAt: true,
+				ended: true,
+			},
 		})
 		if (!session) throw notFound('Session not found')
 
 		await sessionLock(tx, session.id)
 		const existing = await tx.participant.findUnique({
 			where: { userId_sessionId: { userId, sessionId: session.id } },
+			select: { id: true, online: true },
 		})
 		if (!existing && (session.started || session.ended)) {
 			throw conflict('This session is no longer accepting participants')
 		}
 
+		const changed = !existing || !existing.online
 		if (!existing) {
 			await tx.participant.create({
 				data: { sessionId: session.id, userId, online: true },
@@ -135,7 +441,9 @@ export async function joinSession(code: string, userId: number) {
 				user: { select: { id: true, username: true } },
 			},
 		})
-		return { code: session.code, participants }
+		const participant = participants.find(entry => entry.user.id === userId)
+		if (!participant) throw notFound('Participant not found')
+		return { ...session, participant, participants, changed }
 	})
 }
 
@@ -167,6 +475,8 @@ export async function startSession(code: string, userId: number) {
 		}
 
 		const cluster = session.quiz.size / 2
+		const startsAt = new Date(Date.now() + env.gameCountdownMs)
+		const deadlineAt = new Date(startsAt.getTime() + env.matchDeadlineMs)
 		const tournamentPairs = pairs(shuffle(session.quiz.items.map(item => item.id)))
 
 		await tx.sessionMatch.deleteMany({ where: { sessionId: session.id } })
@@ -177,14 +487,15 @@ export async function startSession(code: string, userId: number) {
 				sessionId: session.id,
 				firstItemId,
 				secondItemId,
+				deadlineAt: index === 0 ? deadlineAt : null,
 			})),
 		})
 		await tx.session.update({
 			where: { id: session.id },
-			data: { cluster, started: true },
+			data: { cluster, started: true, startsAt },
 		})
 
-		return { id: session.id, code: session.code, cluster }
+		return { id: session.id, code: session.code, cluster, startsAt }
 	})
 }
 
@@ -198,75 +509,122 @@ export async function firstCurrentMatch(sessionId: number, cluster: number) {
 	return asContractMatch(match)
 }
 
+export async function pendingMatchDeadlines(): Promise<PendingMatchDeadline[]> {
+	return Prisma.$queryRaw<PendingMatchDeadline[]>(PrismaTypes.sql`
+		SELECT
+			match."id" AS "matchId",
+			match."deadlineAt"
+		FROM "SessionMatch" match
+		INNER JOIN "Session" session ON session."id" = match."sessionId"
+		WHERE match."completed" = false
+			AND match."deadlineAt" IS NOT NULL
+			AND session."started" = true
+			AND session."ended" = false
+			AND match."cluster" = session."cluster"
+			AND NOT EXISTS (
+				SELECT 1
+				FROM "SessionMatch" earlier
+				WHERE earlier."sessionId" = match."sessionId"
+					AND earlier."cluster" = match."cluster"
+					AND earlier."completed" = false
+					AND earlier."order" < match."order"
+			)
+	`)
+}
+
+export async function expireMatch(matchId: number): Promise<DeadlineOutcome | null> {
+	const match = await Prisma.sessionMatch.findUnique({
+		where: { id: matchId },
+		select: { sessionId: true, session: { select: { code: true } } },
+	})
+	if (!match) return null
+	const resolution = await finalizeMatch(matchId, match.sessionId)
+	return {
+		matchId,
+		sessionCode: match.session.code,
+		...resolution,
+	}
+}
+
 export async function submitVote(
 	matchId: number,
 	itemId: number,
 	userId: number,
 ): Promise<VoteOutcome> {
-	const identity = await Prisma.sessionMatch.findUnique({
-		where: { id: matchId },
-		select: { sessionId: true },
-	})
-	if (!identity) throw notFound('Match not found')
-
-	return Prisma.$transaction(
+	const persisted = await Prisma.$transaction(
 		async tx => {
-			await sessionLock(tx, identity.sessionId)
-
-			const match = await tx.sessionMatch.findUnique({
-				where: { id: matchId },
-				select: {
-					id: true,
-					sessionId: true,
-					cluster: true,
-					completed: true,
-					firstItemId: true,
-					secondItemId: true,
-					session: {
-						select: {
-							id: true,
-							code: true,
-							cluster: true,
-							ended: true,
-							_count: { select: { participants: true } },
-						},
-					},
-				},
-			})
+			// A share lock keeps finalization from passing an in-flight vote, while
+			// allowing votes from different participants to be written in parallel.
+			const [match] = await tx.$queryRaw<VoteMatchRow[]>(
+				PrismaTypes.sql`
+					SELECT
+						match."id",
+						match."sessionId",
+						match."cluster",
+						match."completed",
+						match."firstItemId",
+						match."secondItemId",
+						match."deadlineAt",
+						NOT EXISTS (
+							SELECT 1
+							FROM "SessionMatch" earlier
+							WHERE earlier."sessionId" = match."sessionId"
+								AND earlier."cluster" = match."cluster"
+								AND earlier."completed" = false
+								AND earlier."order" < match."order"
+						) AS "isCurrent",
+						session."code" AS "sessionCode",
+						session."cluster" AS "sessionCluster",
+						session."ended" AS "sessionEnded",
+						session."startsAt" AS "sessionStartsAt",
+						(
+							SELECT COUNT(*)::integer
+							FROM "Participant" sessionParticipant
+							WHERE sessionParticipant."sessionId" = session."id"
+						) AS "participantCount",
+						participant."id" AS "participantId",
+						participant."userId" AS "participantUserId",
+						participantUser."username" AS "participantUsername"
+					FROM "SessionMatch" match
+					INNER JOIN "Session" session ON session."id" = match."sessionId"
+					LEFT JOIN "Participant" participant
+						ON participant."sessionId" = session."id"
+						AND participant."userId" = ${userId}
+					LEFT JOIN "User" participantUser
+						ON participantUser."id" = participant."userId"
+					WHERE match."id" = ${matchId}
+					FOR SHARE OF match
+				`,
+			)
 			if (!match) throw notFound('Match not found')
-			if (match.completed || match.session.ended)
+			if (match.completed || match.sessionEnded)
 				throw conflict('Voting for this match is closed')
-			if (match.cluster !== match.session.cluster)
-				throw conflict('This is not the current round')
+			if (match.sessionStartsAt && match.sessionStartsAt.getTime() > Date.now()) {
+				throw conflict('The session countdown is still active')
+			}
+			if (match.cluster !== match.sessionCluster || !match.isCurrent)
+				throw conflict('This is not the active match')
 			if (![match.firstItemId, match.secondItemId].includes(itemId)) {
 				throw badRequest('Vote selection is not part of this match')
 			}
-
-			const participant = await tx.participant.findUnique({
-				where: {
-					userId_sessionId: {
-						userId,
-						sessionId: match.sessionId,
-					},
-				},
-				select: {
-					id: true,
-					userId: true,
-					user: { select: { id: true, username: true } },
-				},
-			})
-			if (!participant) throw forbidden('You are not a participant in this session')
+			if (
+				!match.participantId ||
+				!match.participantUserId ||
+				!match.participantUsername
+			) {
+				throw forbidden('You are not a participant in this session')
+			}
 
 			const vote = await tx.sessionVote.upsert({
 				where: {
 					matchId_participantId: {
 						matchId,
-						participantId: participant.id,
+						participantId: match.participantId,
 					},
 				},
 				create: {
 					matchId,
-					participantId: participant.id,
+					participantId: match.participantId,
 					selectionId: itemId,
 				},
 				update: { selectionId: itemId },
@@ -280,120 +638,37 @@ export async function submitVote(
 
 			const contractVote: ContractSessionVote = {
 				...vote,
-				participant,
-			}
-			const participantCount = match.session._count.participants
-			const groupedVotes = await tx.sessionVote.groupBy({
-				by: ['selectionId'],
-				where: { matchId },
-				_count: { _all: true },
-			})
-			const voteCount = groupedVotes.reduce(
-				(total, group) => total + group._count._all,
-				0,
-			)
-			if (voteCount < participantCount) {
-				return {
-					vote: contractVote,
-					sessionCode: match.session.code,
-					matchCompleted: false,
-					winnerId: null,
-					transition: { type: 'none' },
-				}
-			}
-
-			const firstVotes =
-				groupedVotes.find(group => group.selectionId === match.firstItemId)?._count
-					._all ?? 0
-			const secondVotes =
-				groupedVotes.find(group => group.selectionId === match.secondItemId)?._count
-					._all ?? 0
-			const winnerId = selectWinner(
-				match.firstItemId,
-				match.secondItemId,
-				firstVotes,
-				secondVotes,
-			)
-
-			await tx.sessionMatch.update({
-				where: { id: match.id },
-				data: { completed: true, winnerId },
-			})
-
-			const nextMatch = await tx.sessionMatch.findFirst({
-				where: {
-					sessionId: match.sessionId,
-					cluster: match.session.cluster,
-					completed: false,
+				participant: {
+					id: match.participantId,
+					userId: match.participantUserId,
+					user: {
+						id: match.participantUserId,
+						username: match.participantUsername,
+					},
 				},
-				orderBy: { order: 'asc' },
-				select: matchSelect,
-			})
-			if (nextMatch) {
-				return {
-					vote: contractVote,
-					sessionCode: match.session.code,
-					matchCompleted: true,
-					winnerId,
-					transition: { type: 'next', next: asContractMatch(nextMatch) },
-				}
 			}
-
-			if (match.session.cluster === 1) {
-				await tx.session.update({
-					where: { id: match.session.id },
-					data: { favoriteId: winnerId, ended: true, cluster: 0 },
-				})
-				return {
-					vote: contractVote,
-					sessionCode: match.session.code,
-					matchCompleted: true,
-					winnerId,
-					transition: { type: 'over', code: match.session.code },
-				}
-			}
-
-			const completedMatches = await tx.sessionMatch.findMany({
-				where: { sessionId: match.session.id, cluster: match.session.cluster },
-				orderBy: { order: 'asc' },
-				select: { winnerId: true },
-			})
-			const winners = completedMatches.map(entry => {
-				if (!entry.winnerId) throw conflict('Round contains a match without a winner')
-				return entry.winnerId
-			})
-			const newCluster = match.session.cluster / 2
-			const nextPairs = pairs(shuffle(winners))
-
-			await tx.sessionMatch.deleteMany({
-				where: { sessionId: match.session.id, cluster: newCluster },
-			})
-			await tx.sessionMatch.createMany({
-				data: nextPairs.map(([firstItemId, secondItemId], index) => ({
-					order: index + 1,
-					cluster: newCluster,
-					sessionId: match.session.id,
-					firstItemId,
-					secondItemId,
-				})),
-			})
-			await tx.session.update({
-				where: { id: match.session.id },
-				data: { cluster: newCluster },
-			})
-
-			const next = await tx.sessionMatch.findFirstOrThrow({
-				where: { sessionId: match.session.id, cluster: newCluster, order: 1 },
-				select: matchSelect,
-			})
 			return {
 				vote: contractVote,
-				sessionCode: match.session.code,
-				matchCompleted: true,
-				winnerId,
-				transition: { type: 'round', next: asContractMatch(next), cluster: newCluster },
+				sessionId: match.sessionId,
+				sessionCode: match.sessionCode,
+				participantCount: match.participantCount,
+				deadlineAt: match.deadlineAt,
 			}
 		},
-		{ maxWait: 5_000, timeout: 15_000 },
+		{ maxWait: 5_000, timeout: 10_000 },
 	)
+
+	const voteCount = await Prisma.sessionVote.count({ where: { matchId } })
+	const deadlineElapsed =
+		persisted.deadlineAt !== null && persisted.deadlineAt.getTime() <= Date.now()
+	const resolution =
+		voteCount < persisted.participantCount && !deadlineElapsed
+			? unresolvedVote()
+			: await finalizeMatch(matchId, persisted.sessionId)
+
+	return {
+		vote: persisted.vote,
+		sessionCode: persisted.sessionCode,
+		...resolution,
+	}
 }

@@ -5,11 +5,14 @@ model QuizItem {
     image     Image?         @relation(fields: [imageId], references: [id])
     quizId    Int
     quiz      Quiz           @relation(fields: [quizId], references: [id])
-    favorites Session[]
-    match1    SessionMatch[] @relation("Match1")
-    match2    SessionMatch[] @relation("Match2")
-    wins      SessionMatch[] @relation("MatchWinner")
-    votes     SessionVote[]
+    favorites        Session[]
+    match1           SessionMatch[] @relation("Match1")
+    match2           SessionMatch[] @relation("Match2")
+    wins             SessionMatch[] @relation("MatchWinner")
+    votes            SessionVote[]
+    sessionWins      Int            @default(0)
+    weightedScore    Int            @default(0)
+    weightedPlacement Int           @default(0)
     // Data tracking fields
     createdAt DateTime       @default(now())
     updatedAt DateTime?      @updatedAt

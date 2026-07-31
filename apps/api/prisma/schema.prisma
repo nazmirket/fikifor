@@ -42,9 +42,11 @@ model Quiz {
     cover       Image      @relation(fields: [coverId], references: [id])
     description String
     size        Int        @default(64) // 32, 64, 128
-    published   Boolean    @default(false)
-    items       QuizItem[]
-    sessions    Session[]
+    published             Boolean    @default(false)
+    completedSessionCount Int        @default(0)
+    participantWeight     Int        @default(0)
+    items                 QuizItem[]
+    sessions              Session[]
     // Data tracking fields
     createdAt   DateTime   @default(now())
     updatedAt   DateTime?  @updatedAt
@@ -60,11 +62,14 @@ model QuizItem {
     image     Image?         @relation(fields: [imageId], references: [id])
     quizId    Int
     quiz      Quiz           @relation(fields: [quizId], references: [id])
-    favorites Session[]
-    match1    SessionMatch[] @relation("Match1")
-    match2    SessionMatch[] @relation("Match2")
-    wins      SessionMatch[] @relation("MatchWinner")
-    votes     SessionVote[]
+    favorites        Session[]
+    match1           SessionMatch[] @relation("Match1")
+    match2           SessionMatch[] @relation("Match2")
+    wins             SessionMatch[] @relation("MatchWinner")
+    votes            SessionVote[]
+    sessionWins      Int            @default(0)
+    weightedScore    Int            @default(0)
+    weightedPlacement Int           @default(0)
     // Data tracking fields
     createdAt DateTime       @default(now())
     updatedAt DateTime?      @updatedAt
@@ -80,6 +85,7 @@ model Session {
     participants Participant[]
     matches      SessionMatch[]
     started      Boolean        @default(false)
+    startsAt     DateTime?
     ended        Boolean        @default(false)
     cluster      Int
     favoriteId   Int?
@@ -106,6 +112,7 @@ model SessionMatch {
     secondItem   QuizItem      @relation("Match2", fields: [secondItemId], references: [id])
     winnerId     Int?
     winner       QuizItem?     @relation("MatchWinner", fields: [winnerId], references: [id])
+    deadlineAt   DateTime?
     votes        SessionVote[]
     // Data tracking fields
     createdAt    DateTime      @default(now())
@@ -113,6 +120,7 @@ model SessionMatch {
 
     @@unique([sessionId, order, cluster])
     @@index([sessionId, cluster, completed, order])
+    @@index([completed, deadlineAt])
 }
 
 model SessionVote {

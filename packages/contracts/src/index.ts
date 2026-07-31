@@ -106,6 +106,15 @@ export const fileNameParamsSchema = z.object({
 			'Invalid file name',
 		),
 })
+export const imageQuerySchema = z.object({
+	width: z.coerce
+		.number()
+		.int()
+		.refine(value => [320, 640, 1280].includes(value), {
+			message: 'Image width must be 320, 640, or 1280',
+		})
+		.default(1280),
+})
 export const sessionCodeParamsSchema = z.object({ code: sessionCodeSchema })
 export const createSessionInputSchema = z.object({ quizId: positiveIdSchema })
 export const sessionJoinInputSchema = z.object({ code: sessionCodeSchema })
@@ -236,6 +245,7 @@ export interface SessionMatch {
 	cluster: number
 	completed?: boolean
 	winnerId?: number | null
+	deadlineAt?: string | null
 	votes: SessionVote[]
 	firstItem: QuizItem
 	secondItem: QuizItem
@@ -251,11 +261,12 @@ export interface GameSession {
 	code: string
 	cluster: number
 	started: boolean
+	startsAt: string | null
 	ended: boolean
 	adminId: number
 	admin: UserSummary
 	favorite: QuizItem | null
-	quiz: Pick<Quiz, 'id' | 'title' | 'cover' | 'size'>
+	quiz: Pick<Quiz, 'id' | 'title' | 'cover' | 'size' | 'published'>
 	participants: Participant[]
 }
 
@@ -279,6 +290,7 @@ export interface ClientToServerEvents {
 
 export interface ServerToClientEvents {
 	'session:joined': (participants: Participant[]) => void
+	'session:participant': (participant: Participant) => void
 	'session:online': (username: string) => void
 	'session:offline': (username: string) => void
 	'session:counter': (counter: number) => void

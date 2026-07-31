@@ -27,7 +27,13 @@
 			</div>
 		</div>
 		<div class="p-3 max-sm:p-1.5">
-			<Image v-if="item.image" :file="item.image" class="aspect-default w-full" />
+			<Image
+				v-if="item.image"
+				:file="item.image"
+				:is-public="isPublic"
+				eager
+				class="aspect-default w-full"
+			/>
 			<div
 				v-else
 				class="aspect-default flex items-center justify-center rounded-lg bg-white bg-opacity-20"
@@ -68,6 +74,10 @@ const props = defineProps({
 		type: String,
 		default: undefined,
 		validator: value => value === undefined || ['win', 'lose'].includes(value),
+	},
+	isPublic: {
+		type: Boolean,
+		default: false,
 	},
 })
 

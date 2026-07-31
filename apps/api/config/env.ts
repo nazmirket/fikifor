@@ -41,6 +41,8 @@ export const env = {
 	redisUrl: process.env.REDIS_URL ?? 'redis://localhost:6379',
 	remoteImageMaxBytes: integer(process.env.REMOTE_IMAGE_MAX_BYTES, 5_000_000),
 	remoteImageTimeoutMs: integer(process.env.REMOTE_IMAGE_TIMEOUT_MS, 8_000),
+	gameCountdownMs: integer(process.env.GAME_COUNTDOWN_MS, 5_000),
+	matchDeadlineMs: integer(process.env.MATCH_DEADLINE_MS, 60_000),
 	shutdownTimeoutMs: integer(process.env.SHUTDOWN_TIMEOUT_MS, 10_000),
 	logLevel: process.env.LOG_LEVEL ?? (nodeEnv === 'test' ? 'silent' : 'info'),
 }

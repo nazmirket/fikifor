@@ -47,6 +47,7 @@ export async function getSession(code: string) {
 			code: true,
 			cluster: true,
 			started: true,
+			startsAt: true,
 			ended: true,
 			adminId: true,
 			admin: {
@@ -68,9 +69,11 @@ export async function getSession(code: string) {
 					title: true,
 					cover: true,
 					size: true,
+					published: true,
 				},
 			},
 			participants: {
+				orderBy: { id: 'asc' },
 				select: {
 					id: true,
 					online: true,
@@ -87,17 +90,20 @@ export async function getSession(code: string) {
 
 	if (!session) throw notFound('Session not found')
 
-	const match = session.started
-		? await Prisma.sessionMatch.findFirst({
-				where: {
-					sessionId: session.id,
-					completed: false,
-					cluster: session.cluster,
-				},
-				orderBy: { order: 'asc' },
-				select: matchSelect,
-			})
-		: null
+	const match =
+		session.started &&
+		!session.ended &&
+		(!session.startsAt || session.startsAt.getTime() <= Date.now())
+			? await Prisma.sessionMatch.findFirst({
+					where: {
+						sessionId: session.id,
+						completed: false,
+						cluster: session.cluster,
+					},
+					orderBy: { order: 'asc' },
+					select: matchSelect,
+				})
+			: null
 
 	const final = session.ended
 		? await Prisma.sessionMatch.findFirst({

@@ -1,13 +1,20 @@
 <template>
 	<img
 		v-if="objectUrl"
+		ref="element"
 		:src="objectUrl"
+		:srcset="responsiveSrcset"
+		:sizes="responsiveSrcset ? '(max-width: 640px) 100vw, 50vw' : undefined"
 		:alt="alt"
-		loading="lazy"
+		:loading="eager ? 'eager' : 'lazy'"
+		:fetchpriority="eager ? 'high' : 'auto'"
+		decoding="async"
 		class="rounded-lg object-cover"
+		@error="handleImageError"
 	/>
 	<div
 		v-else
+		ref="element"
 		class="flex h-full w-full items-center justify-center rounded-lg bg-gray-200"
 	>
 		<UIcon v-if="!failed" name="svg-spinners:ring-resize" :size="36" />
@@ -19,45 +26,108 @@
 import type { ImageAsset } from '@fikifor/contracts'
 import { useAuthStore } from '~/store/auth'
 
-const props = defineProps<{
-	file: ImageAsset
-	alt?: string
-}>()
+const props = withDefaults(
+	defineProps<{
+		file: ImageAsset
+		alt?: string
+		isPublic?: boolean
+		eager?: boolean
+		width?: 320 | 640 | 1280
+	}>(),
+	{ alt: '', isPublic: false, eager: false, width: 1280 },
+)
 
 const failed = ref(false)
 const objectUrl = ref<string>()
+const responsiveSrcset = computed(() =>
+	props.isPublic
+		? ([320, 640, 1280] as const).map(width => `${fileUrl(width)} ${width}w`).join(', ')
+		: undefined,
+)
+const element = ref<HTMLElement>()
+let observer: IntersectionObserver | undefined
+let controller: AbortController | undefined
+let requestSequence = 0
+
+function fileUrl(width = props.width) {
+	const url = [useRuntimeConfig().public.API_URL, 'files', props.file.name].join('/')
+	return `${url}?width=${width}`
+}
 
 function clearObjectUrl() {
-	if (!objectUrl.value) return
-	URL.revokeObjectURL(objectUrl.value)
+	if (objectUrl.value?.startsWith('blob:')) URL.revokeObjectURL(objectUrl.value)
 	objectUrl.value = undefined
 }
 
-function load() {
-	useAsync(
-		async () => {
-			clearObjectUrl()
-			failed.value = false
-			const url = [useRuntimeConfig().public.API_URL, 'files', props.file.name].join('/')
-			const headers = new Headers()
-			const token = useAuthStore().token
-			if (token) headers.set('Authorization', `Bearer ${token}`)
-			const res = await fetch(url, {
-				method: 'GET',
-				headers,
-			})
-			if (!res.ok) {
-				failed.value = true
-				return
-			}
-			const blob = await res.blob()
-			objectUrl.value = URL.createObjectURL(blob)
-		},
-		{ setLoader: useLoading.set },
-	)
+function handleImageError() {
+	clearObjectUrl()
+	failed.value = true
 }
 
-onMounted(() => load())
-watch(() => props.file.name, load)
-onBeforeUnmount(clearObjectUrl)
+function stopPending() {
+	observer?.disconnect()
+	observer = undefined
+	controller?.abort()
+	controller = undefined
+}
+
+async function loadPrivate() {
+	const sequence = ++requestSequence
+	controller?.abort()
+	controller = new AbortController()
+	clearObjectUrl()
+	failed.value = false
+	const headers = new Headers()
+	const token = useAuthStore().token
+	if (token) headers.set('Authorization', `Bearer ${token}`)
+
+	try {
+		const response = await fetch(fileUrl(), {
+			method: 'GET',
+			headers,
+			signal: controller.signal,
+			cache: 'force-cache',
+		})
+		if (!response.ok) throw new Error(`Image request failed with ${response.status}`)
+		const blob = await response.blob()
+		if (sequence !== requestSequence) return
+		objectUrl.value = URL.createObjectURL(blob)
+	} catch (error) {
+		if ((error as DOMException).name !== 'AbortError' && sequence === requestSequence) {
+			failed.value = true
+		}
+	}
+}
+
+function load() {
+	stopPending()
+	clearObjectUrl()
+	failed.value = false
+	if (props.isPublic) {
+		objectUrl.value = fileUrl()
+		return
+	}
+	if (props.eager || !('IntersectionObserver' in window)) {
+		void loadPrivate()
+		return
+	}
+	observer = new IntersectionObserver(
+		entries => {
+			if (!entries.some(entry => entry.isIntersecting)) return
+			observer?.disconnect()
+			observer = undefined
+			void loadPrivate()
+		},
+		{ rootMargin: '200px' },
+	)
+	if (element.value) observer.observe(element.value)
+}
+
+onMounted(load)
+watch(() => [props.file.name, props.isPublic, props.eager, props.width], load)
+onBeforeUnmount(() => {
+	requestSequence += 1
+	stopPending()
+	clearObjectUrl()
+})
 </script>

@@ -59,5 +59,7 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm build
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
       - run: docker build --file apps/api/Dockerfile --tag fikifor-api:ci .
       - run: docker build --file apps/web/Dockerfile --tag fikifor-web:ci .

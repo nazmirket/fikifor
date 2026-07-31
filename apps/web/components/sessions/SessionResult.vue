@@ -12,11 +12,13 @@
 				:item="final.firstItem"
 				:votes="votes.filter(v => v.selectionId === final.firstItem?.id)"
 				:is-favorite="sessionStore.session.favorite?.id === final.firstItem?.id"
+				:is-public="sessionStore.session.quiz.published"
 			/>
 			<SessionItemPassive
 				:item="final.secondItem"
 				:votes="votes.filter(v => v.selectionId === final.secondItem?.id)"
 				:is-favorite="sessionStore.session.favorite?.id === final.secondItem?.id"
+				:is-public="sessionStore.session.quiz.published"
 			/>
 		</div>
 

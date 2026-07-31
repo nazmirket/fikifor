@@ -13,8 +13,10 @@ import { Server } from 'socket.io'
 import { env } from '../config/env'
 import Prisma from '../prisma'
 import { logger } from '../utils/logger'
+import { renderMetrics } from '../utils/metrics'
 import { protect } from './auth'
-import { registerPresence } from './presence'
+import { resumeGameRuntime, stopGameRuntime } from './gameRuntime'
+import { reconcilePresence, registerPresence } from './presence'
 import { registerSessionHandlers } from './sessionHandlers'
 import type { FikiforServer } from './types'
 
@@ -61,7 +63,30 @@ export async function createSocketRuntime(port = env.socketPort) {
 		},
 		maxHttpBufferSize: 100_000,
 	})
+	app.get('/metrics', async (_req, res) => {
+		const activeSessions = await Prisma.session.count({
+			where: { started: true, ended: false },
+		})
+		res
+			.type('text/plain; version=0.0.4')
+			.status(200)
+			.send(
+				renderMetrics({
+					fikifor_active_sessions: {
+						help: 'Started game sessions that have not ended',
+						value: activeSessions,
+					},
+					fikifor_socket_connections: {
+						help: 'Currently connected Socket.IO clients',
+						value: io.engine.clientsCount,
+					},
+				}),
+			)
+	})
 	io.adapter(createAdapter(publisher, subscriber))
+	const reconciledUsers = await reconcilePresence(io)
+	await resumeGameRuntime(io)
+	logger.info({ reconciledUsers }, 'Socket presence reconciled')
 	io.use(protect)
 	io.on('connection', socket => {
 		registerPresence(io, socket)
@@ -69,6 +94,7 @@ export async function createSocketRuntime(port = env.socketPort) {
 	})
 
 	const close = async () => {
+		stopGameRuntime()
 		await new Promise<void>(resolve => io.close(() => resolve()))
 		await Promise.allSettled([publisher.quit(), subscriber.quit(), Prisma.$disconnect()])
 	}

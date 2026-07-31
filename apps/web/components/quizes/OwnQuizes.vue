@@ -35,7 +35,12 @@
 					>
 						{{ quiz.published ? 'Yayında' : 'Taslak' }}
 					</span>
-					<Image :file="quiz?.cover" class="aspect-default h-[200px]" />
+					<Image
+						:file="quiz?.cover"
+						:is-public="quiz.published"
+						:width="640"
+						class="aspect-default h-[200px]"
+					/>
 					<div class="h-[60px] w-[280px] p-3 text-sm">
 						<span class="line-clamp-2 text-ellipsis text-gray-300">
 							{{ quiz.title }}
