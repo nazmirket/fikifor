@@ -1,6 +1,7 @@
-# Fikifor Docker deployment
+# Fikifor Podman deployment
 
-The root `docker-compose.yml` builds and starts the complete stack locally. This
+The root `docker-compose.yml` builds and starts the complete stack locally with
+Podman. This
 directory contains the production deployment contract, which runs prebuilt API
 and web images without a process manager.
 
@@ -9,8 +10,8 @@ and web images without a process manager.
 From the repository root:
 
 ```bash
-docker build --file apps/api/Dockerfile --tag fikifor-api:latest .
-docker build --file apps/web/Dockerfile --tag fikifor-web:latest .
+podman build --file apps/api/Dockerfile --tag fikifor-api:latest .
+podman build --file apps/web/Dockerfile --tag fikifor-web:latest .
 ```
 
 For remote deployments, push immutable version tags or digest-pinned images and
@@ -22,9 +23,9 @@ set `FIKIFOR_API_IMAGE` and `FIKIFOR_WEB_IMAGE` accordingly.
 cp deploy/.env.example deploy/.env
 # Replace every placeholder in deploy/.env.
 
-docker compose --env-file deploy/.env --file deploy/compose.yml config --quiet
-docker compose --env-file deploy/.env --file deploy/compose.yml up -d
-docker compose --env-file deploy/.env --file deploy/compose.yml ps
+podman compose --env-file deploy/.env --file deploy/compose.yml config --quiet
+podman compose --env-file deploy/.env --file deploy/compose.yml up -d
+podman compose --env-file deploy/.env --file deploy/compose.yml ps
 ```
 
 The deployment runs six services:
@@ -37,7 +38,7 @@ The deployment runs six services:
 - the Nuxt web application
 
 API and Socket.IO intentionally use separate containers and direct Node
-processes. Docker owns restart policy, health checks, logs, and process
+processes. Podman owns restart policy, health checks, logs, and process
 lifecycle; no in-container process manager is used.
 
 Set `CORS_ORIGINS` to a comma-separated list of browser origins. Keep
@@ -55,7 +56,7 @@ switching an existing database to `prisma migrate deploy`, take a verified
 backup and baseline the migration once:
 
 ```bash
-docker compose --env-file deploy/.env --file deploy/compose.yml run --rm \
+podman compose --env-file deploy/.env --file deploy/compose.yml run --rm \
   migrate /app/node_modules/.bin/prisma migrate resolve \
   --applied 20260729000000_initial
 ```

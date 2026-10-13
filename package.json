@@ -21,9 +21,9 @@
 		"db:build": "pnpm --filter @fikifor/api db:build",
 		"db:migrate": "pnpm --filter @fikifor/api db:migrate",
 		"db:deploy": "pnpm --filter @fikifor/api db:deploy",
-		"docker:up": "docker compose up -d --build",
-		"docker:down": "docker compose down",
-		"docker:logs": "docker compose logs -f"
+		"podman:up": "podman compose up -d --build",
+		"podman:down": "podman compose down",
+		"podman:logs": "podman compose logs -f"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

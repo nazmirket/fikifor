@@ -20,14 +20,14 @@ fikifor/
 │   └── contracts/           # Shared API schemas, domain types, and socket events
 ├── deploy/                  # Production Compose contract and environment template
 ├── public/                  # Repository documentation assets
-├── docker-compose.yml       # Local full-stack Docker environment
+├── docker-compose.yml       # Local full-stack Compose environment
 ├── package.json             # Root workspace commands
 ├── pnpm-lock.yaml           # Single dependency lockfile
 └── pnpm-workspace.yaml      # Workspace package discovery
 ```
 
-The API and Socket.IO server share one package and Docker image, but run as
-separate Node processes. Docker owns process lifecycle, restart policy, health
+The API and Socket.IO server share one package and container image, but run as
+separate Node processes. Podman owns process lifecycle, restart policy, health
 checks, and log rotation.
 
 ## Technology
@@ -36,22 +36,22 @@ checks, and log rotation.
 - Express, Socket.IO, TypeScript, Zod, and Prisma
 - PostgreSQL and Redis
 - pnpm workspaces
-- Docker and Docker Compose
+- Podman and podman-compose
 
 ## Requirements
 
 - Node.js 20+
 - pnpm 10.33+
 - PostgreSQL 14+ for host-based development
-- Docker with Compose for the containerized workflow
+- Podman 6+ with podman-compose for the containerized workflow
 
-## Full stack with Docker
+## Full stack with Podman
 
 The shortest path to a running local installation is:
 
 ```bash
 corepack enable
-pnpm docker:up
+pnpm podman:up
 ```
 
 Compose builds both application images, starts PostgreSQL and Redis, applies
@@ -64,8 +64,8 @@ Prisma migrations, and then starts the API, Socket.IO, and web containers.
 Follow logs or stop the stack with:
 
 ```bash
-pnpm docker:logs
-pnpm docker:down
+pnpm podman:logs
+pnpm podman:down
 ```
 
 The default credentials and JWT secret are intended only for local use. Use the
@@ -81,10 +81,10 @@ pnpm install
 cp apps/api/.env.example apps/api/.env
 ```
 
-Start PostgreSQL and Redis through Docker and apply migrations:
+Start PostgreSQL and Redis through Podman and apply migrations:
 
 ```bash
-docker compose up -d postgres redis
+podman compose up -d postgres redis
 pnpm db:deploy
 ```
 
@@ -114,8 +114,8 @@ values can be overridden with `NUXT_PUBLIC_APP_URL`,
 | `pnpm db:build` | Rebuild the composed Prisma schema and client |
 | `pnpm db:migrate` | Create or apply development migrations |
 | `pnpm db:deploy` | Apply committed migrations |
-| `pnpm docker:up` | Build and start the local full stack |
-| `pnpm docker:down` | Stop the local stack |
+| `pnpm podman:up` | Build and start the local full stack |
+| `pnpm podman:down` | Stop the local stack |
 
 ## Database workflow
 
@@ -130,7 +130,7 @@ pnpm db:build
 pnpm db:migrate -- --name describe_the_change
 ```
 
-Docker startup runs `prisma migrate deploy` in a one-shot migration container
+Podman startup runs `prisma migrate deploy` in a one-shot migration container
 before either backend service starts.
 
 Votes are committed under a PostgreSQL session-level advisory lock. Match
@@ -156,7 +156,7 @@ multi-tab presence.
 See [deploy/README.md](./deploy/README.md) for image build, configuration,
 reverse-proxy, migration, persistent-volume, and upgrade instructions.
 
-Production uses direct Node processes inside containers; Docker owns their
+Production uses direct Node processes inside containers; Podman owns their
 lifecycle and restart behavior.
 
 ## Screenshots

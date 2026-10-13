@@ -1,6 +1,8 @@
 .git
 .github
-.codex
+.agents
+.claude
+.mirket
 .idea
 .vscode
 .DS_Store
