@@ -2,7 +2,7 @@
 	<div class="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
 		<NuxtLink
 			to="/quizes"
-			class="inline-flex items-center gap-2 text-sm font-semibold text-gray-500 transition hover:text-indigo-300"
+			class="inline-flex items-center gap-2 text-sm font-semibold text-[#c8b7ff] transition hover:text-[#fff4df]"
 		>
 			<UIcon name="heroicons:arrow-left" :size="18" />
 			Quizlere dön
@@ -10,20 +10,20 @@
 
 		<div v-if="loading" class="mt-6 space-y-6">
 			<div
-				class="h-[340px] animate-pulse rounded-3xl border border-gray-800 bg-gray-900"
+				class="h-[340px] animate-pulse rounded-[2rem] border border-[#fff4df]/10 bg-[#1f182a]"
 			/>
 			<div
-				class="h-[420px] animate-pulse rounded-3xl border border-gray-800 bg-gray-900"
+				class="h-[420px] animate-pulse rounded-[2rem] border border-[#fff4df]/10 bg-[#1f182a]"
 			/>
 		</div>
 
 		<template v-else-if="quiz && leaderboard">
 			<section
-				class="mt-6 overflow-hidden rounded-3xl border border-gray-800 bg-gray-900/70"
+				class="fk-surface mt-6 overflow-hidden rounded-[2rem]"
 				aria-labelledby="quiz-title"
 			>
 				<div class="grid lg:grid-cols-[minmax(0,440px)_1fr]">
-					<div class="quiz-hero-media min-w-0 bg-gray-900 lg:min-h-[360px]">
+					<div class="quiz-hero-media min-w-0 bg-[#271c35] lg:min-h-[360px]">
 						<Image
 							:file="quiz.cover"
 							:alt="quiz.title"
@@ -35,25 +35,22 @@
 					<div class="flex min-w-0 flex-col p-6 sm:p-8">
 						<div class="flex flex-wrap items-center gap-2 text-sm">
 							<span
-								class="rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 font-semibold text-emerald-300"
+								class="rounded-full border border-[#9fe0c1]/30 bg-[#9fe0c1]/10 px-3 py-1 font-semibold text-[#9fe0c1]"
 							>
 								Yayında
 							</span>
-							<span class="text-gray-600">Yayıncı</span>
-							<span class="font-semibold text-gray-300">{{ publisher }}</span>
+							<span class="text-[#a69baa]">Yayıncı</span>
+							<span class="font-semibold text-[#fff4df]">{{ publisher }}</span>
 						</div>
 
-						<h1
-							id="quiz-title"
-							class="mt-5 text-3xl font-bold tracking-tight text-gray-100 sm:text-4xl"
-						>
+						<h1 id="quiz-title" class="fk-display mt-5 text-3xl sm:text-4xl">
 							{{ quiz.title }}
 						</h1>
-						<p class="mt-4 max-w-2xl text-sm leading-7 text-gray-500 sm:text-base">
+						<p class="mt-4 max-w-2xl text-sm leading-7 text-[#c3b8c7] sm:text-base">
 							{{ quiz.description }}
 						</p>
 
-						<div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm text-gray-500">
+						<div class="mt-6 flex flex-wrap gap-x-6 gap-y-3 text-sm text-[#a69baa]">
 							<span class="flex items-center gap-2">
 								<UIcon name="heroicons:squares-2x2" :size="19" />
 								{{ quiz.size }} seçenek
@@ -72,12 +69,12 @@
 							<UButton
 								icon="heroicons:play"
 								:loading="starting"
-								class="!w-full sm:!w-auto sm:px-8"
+								class="fk-button-primary !w-full !rounded-xl !border-0 sm:!w-auto sm:px-8"
 								@click="start"
 							>
 								Oyun odası aç
 							</UButton>
-							<p v-if="!authStore.isLoggedIn" class="mt-3 text-xs text-gray-600">
+							<p v-if="!authStore.isLoggedIn" class="mt-3 text-xs text-[#a69baa]">
 								Oda açmak için giriş yapman istenecek.
 							</p>
 						</div>
@@ -86,18 +83,16 @@
 			</section>
 
 			<section
-				class="mt-6 rounded-3xl border border-gray-800 bg-gray-900/50 p-5 sm:p-7"
+				class="fk-surface mt-6 rounded-[2rem] p-5 sm:p-7"
 				aria-labelledby="leaderboard-title"
 			>
 				<div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
 					<div>
-						<p class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-400">
-							Genel sonuçlar
-						</p>
-						<h2 id="leaderboard-title" class="mt-2 text-2xl font-bold text-gray-100">
+						<p class="fk-eyebrow"> Genel sonuçlar </p>
+						<h2 id="leaderboard-title" class="fk-display mt-2 text-2xl">
 							Topluluk sıralaması
 						</h2>
-						<p class="mt-2 max-w-3xl text-sm leading-6 text-gray-500">
+						<p class="mt-2 max-w-3xl text-sm leading-6 text-[#c3b8c7]">
 							Her tamamlanan oyunda tüm seçenekler ulaştıkları eleme turuna göre
 							sıralanır. Sıra puanı odadaki katılımcı sayısıyla çarpılır; böylece
 							kalabalık oyunlar genel sonuca daha fazla ağırlık verir.
@@ -105,27 +100,90 @@
 					</div>
 
 					<div class="grid shrink-0 grid-cols-2 gap-3">
-						<div class="rounded-2xl border border-gray-800 bg-gray-950/70 px-4 py-3">
-							<p class="text-xs text-gray-600">Tamamlanan oyun</p>
-							<p class="mt-1 text-xl font-bold text-gray-200">
+						<div class="rounded-2xl border border-[#fff4df]/10 bg-[#120f1a]/60 px-4 py-3">
+							<p class="text-xs text-[#a69baa]">Tamamlanan oyun</p>
+							<p class="mt-1 text-xl font-bold text-[#fff4df]">
 								{{ leaderboard.completedSessions }}
 							</p>
 						</div>
-						<div class="rounded-2xl border border-gray-800 bg-gray-950/70 px-4 py-3">
-							<p class="text-xs text-gray-600">Katılımcı ağırlığı</p>
-							<p class="mt-1 text-xl font-bold text-gray-200">
+						<div class="rounded-2xl border border-[#fff4df]/10 bg-[#120f1a]/60 px-4 py-3">
+							<p class="text-xs text-[#a69baa]">Katılımcı ağırlığı</p>
+							<p class="mt-1 text-xl font-bold text-[#fff4df]">
 								{{ leaderboard.participantWeight }}
 							</p>
 						</div>
 					</div>
 				</div>
 
+				<div v-if="leaderboard.entries.length" class="mt-7 md:hidden">
+					<div class="mb-3 flex items-center gap-2 text-xs font-semibold text-[#a69baa]">
+						<UIcon name="heroicons:arrow-down" :size="16" class="text-[#ff795e]" />
+						<span>Puanları görmek için aşağı kaydır</span>
+					</div>
+					<div class="space-y-3">
+						<article
+							v-for="entry in leaderboard.entries"
+							:key="`mobile-${entry.item.id}`"
+							class="rounded-2xl border border-[#fff4df]/10 bg-[#1f182a]/70 p-4"
+						>
+							<div class="flex items-start gap-3">
+								<span
+									class="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-sm font-bold"
+									:class="rankClass(entry.rank)"
+								>
+									{{ entry.rank }}
+								</span>
+								<div class="min-w-0 flex-1">
+									<div class="flex items-start justify-between gap-3">
+										<div class="flex min-w-0 items-center gap-2">
+											<Image
+												v-if="entry.item.image"
+												:file="entry.item.image"
+												:alt="entry.item.title ?? 'Quiz seçeneği'"
+												:is-public="quiz.published"
+												:width="320"
+												class="h-10 w-12 shrink-0 rounded-lg"
+											/>
+											<span class="truncate font-semibold text-[#fff4df]">
+												{{ entry.item.title || 'İsimsiz seçenek' }}
+											</span>
+										</div>
+										<div class="shrink-0 text-right">
+											<p class="text-[0.65rem] uppercase tracking-[0.16em] text-[#a69baa]"
+												>Puan</p
+											>
+											<p class="font-bold text-[#c8b7ff]">{{ entry.weightedScore }}</p>
+										</div>
+									</div>
+									<div class="mt-3 flex items-center gap-3">
+										<div class="h-2 flex-1 overflow-hidden rounded-full bg-[#271c35]">
+											<div
+												class="h-full rounded-full bg-[#ff795e]"
+												:style="{ width: `${entry.scorePercentage}%` }"
+											/>
+										</div>
+										<span class="text-xs font-semibold text-[#c3b8c7]"
+											>%{{ entry.scorePercentage }}</span
+										>
+									</div>
+									<p class="mt-2 text-xs text-[#a69baa]">
+										{{ entry.sessionWins }} oyun zaferi · Ort. sıra
+										{{ formatRank(entry.averageRank) }}
+									</p>
+								</div>
+							</div>
+						</article>
+					</div>
+				</div>
+
 				<div
 					v-if="leaderboard.entries.length"
-					class="mt-7 overflow-x-auto rounded-2xl border border-gray-800"
+					class="mt-7 hidden overflow-x-auto rounded-2xl border border-[#fff4df]/10 md:block"
 				>
 					<table class="w-full min-w-[860px] border-collapse text-left">
-						<thead class="bg-gray-950/80 text-xs uppercase tracking-wider text-gray-600">
+						<thead
+							class="bg-[#120f1a]/80 text-xs uppercase tracking-wider text-[#a69baa]"
+						>
 							<tr>
 								<th scope="col" class="w-20 px-5 py-4">Sıra</th>
 								<th scope="col" class="px-5 py-4">Seçenek</th>
@@ -135,11 +193,11 @@
 								<th scope="col" class="w-48 px-5 py-4">Başarı</th>
 							</tr>
 						</thead>
-						<tbody class="divide-y divide-gray-800">
+						<tbody class="divide-y divide-[#fff4df]/10">
 							<tr
 								v-for="entry in leaderboard.entries"
 								:key="entry.item.id"
-								class="bg-gray-900/40 transition hover:bg-gray-800/50"
+								class="bg-[#1f182a]/40 transition hover:bg-[#271c35]/80"
 							>
 								<td class="px-5 py-4">
 									<span
@@ -161,33 +219,33 @@
 										/>
 										<div
 											v-else
-											class="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg bg-gray-800"
+											class="flex h-12 w-16 shrink-0 items-center justify-center rounded-lg border border-[#fff4df]/10 bg-[#271c35]"
 										>
-											<UIcon name="heroicons:photo" class="text-gray-600" :size="22" />
+											<UIcon name="heroicons:photo" class="text-[#a69baa]" :size="22" />
 										</div>
-										<span class="truncate font-semibold text-gray-200">
+										<span class="truncate font-semibold text-[#fff4df]">
 											{{ entry.item.title || 'İsimsiz seçenek' }}
 										</span>
 									</div>
 								</td>
-								<td class="px-5 py-4 text-right font-medium text-gray-400">
+								<td class="px-5 py-4 text-right font-medium text-[#c3b8c7]">
 									{{ entry.sessionWins }}
 								</td>
-								<td class="px-5 py-4 text-right font-medium text-gray-400">
+								<td class="px-5 py-4 text-right font-medium text-[#c3b8c7]">
 									{{ formatRank(entry.averageRank) }}
 								</td>
-								<td class="px-5 py-4 text-right font-bold text-indigo-300">
+								<td class="px-5 py-4 text-right font-bold text-[#c8b7ff]">
 									{{ entry.weightedScore }}
 								</td>
 								<td class="px-5 py-4">
 									<div class="flex items-center gap-3">
-										<div class="h-2 flex-1 overflow-hidden rounded-full bg-gray-800">
+										<div class="h-2 flex-1 overflow-hidden rounded-full bg-[#271c35]">
 											<div
-												class="h-full rounded-full bg-indigo-500"
+												class="h-full rounded-full bg-[#ff795e]"
 												:style="{ width: `${entry.scorePercentage}%` }"
 											/>
 										</div>
-										<span class="w-12 text-right text-xs font-semibold text-gray-400">
+										<span class="w-12 text-right text-xs font-semibold text-[#c3b8c7]">
 											%{{ entry.scorePercentage }}
 										</span>
 									</div>
@@ -199,11 +257,11 @@
 
 				<div
 					v-else
-					class="mt-7 flex flex-col items-center rounded-2xl border border-dashed border-gray-800 px-6 py-14 text-center"
+					class="mt-7 flex flex-col items-center rounded-2xl border border-dashed border-[#fff4df]/15 bg-[#120f1a]/30 px-6 py-14 text-center"
 				>
-					<UIcon name="heroicons:trophy" class="text-gray-700" :size="36" />
-					<h3 class="mt-4 font-semibold text-gray-300">Henüz tamamlanan oyun yok</h3>
-					<p class="mt-2 max-w-md text-sm leading-6 text-gray-600">
+					<UIcon name="heroicons:trophy" class="text-[#ff795e]" :size="36" />
+					<h3 class="mt-4 font-semibold text-[#fff4df]">Henüz tamamlanan oyun yok</h3>
+					<p class="mt-2 max-w-md text-sm leading-6 text-[#a69baa]">
 						İlk oyun tamamlandığında tüm seçeneklerin katılımcı ağırlıklı sıralaması
 						burada görünecek.
 					</p>

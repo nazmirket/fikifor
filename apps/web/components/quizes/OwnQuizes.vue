@@ -13,8 +13,10 @@
 
 		<div v-else class="flex min-w-full gap-4 overflow-x-auto py-2">
 			<template v-for="quiz of quizes" :key="quiz.id">
-				<div
-					class="group relative flex min-w-fit cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#fff4df]/10 bg-[#120f1a] p-1.5 transition hover:-translate-y-0.5 hover:border-[#ff795e]/60"
+				<button
+					type="button"
+					class="group relative flex min-w-fit flex-col overflow-hidden rounded-2xl border border-[#fff4df]/10 bg-[#120f1a] p-1.5 text-left transition hover:-translate-y-0.5 hover:border-[#ff795e]/60"
+					:aria-label="`${quiz.title} quizini düzenle`"
 					@click="
 						() => {
 							selected = quiz
@@ -57,7 +59,7 @@
 						<UIcon name="heroicons:play-circle" :size="17" />
 						{{ quiz.sessionCount ?? 0 }} oturum
 					</div>
-				</div>
+				</button>
 			</template>
 		</div>
 

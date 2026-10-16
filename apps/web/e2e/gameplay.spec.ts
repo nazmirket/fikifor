@@ -96,9 +96,9 @@ test('restores countdown after reload and completes the winner animation', async
 	page.on('pageerror', error => errors.push(error.message))
 
 	await page.goto(`/login?code=${code}`)
-	await page.getByPlaceholder('Kullanıcı adı').fill(username)
-	await page.getByPlaceholder('Parola').fill(password)
-	await page.getByRole('button', { name: 'Giriş Yap' }).click()
+	await page.getByRole('textbox', { name: 'Kullanıcı adı' }).fill(username)
+	await page.getByLabel('Parola', { exact: true }).fill(password)
+	await page.getByRole('button', { name: 'Giriş yap', exact: true }).click()
 	await expect(page).toHaveURL(new RegExp(`/sessions/${code}$`))
 
 	await page.getByRole('button', { name: 'Başlat' }).click()
