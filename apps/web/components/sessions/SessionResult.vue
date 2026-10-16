@@ -1,9 +1,9 @@
 <template>
 	<div class="flex w-full flex-col gap-4">
 		<div
-			class="flex h-[60px] w-full items-center justify-between rounded-lg border bg-gray-950 px-4"
+			class="fk-surface flex h-[60px] w-full items-center justify-between rounded-2xl px-4"
 		>
-			<span class="text-lg">
+			<span class="text-lg font-semibold text-[#fff4df]">
 				{{ sessionStore.session.quiz?.title }}
 			</span>
 		</div>
@@ -22,7 +22,12 @@
 			/>
 		</div>
 
-		<UButton @click="navigateTo('/')"> Go to Home </UButton>
+		<UButton
+			class="!bg-[#ff795e] !text-[#26131a] hover:!bg-[#ff927d]"
+			@click="navigateTo('/')"
+		>
+			Ana sayfaya dön
+		</UButton>
 	</div>
 </template>
 

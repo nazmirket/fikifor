@@ -1,7 +1,5 @@
 <template>
-	<div
-		class="flex w-full flex-col divide-y divide-gray-600 rounded-lg border bg-gray-950"
-	>
+	<div class="fk-surface flex w-full flex-col divide-y divide-[#fff4df]/10 rounded-2xl">
 		<div class="flex w-full flex-wrap gap-2 p-3 max-sm:p-1.5">
 			<template v-for="p of participants" :key="p.id">
 				<ParticipantBadge :participant="p" />
@@ -9,7 +7,7 @@
 		</div>
 
 		<div
-			class="flex w-full items-center justify-between gap-2 p-3 max-sm:flex-col max-sm:gap-1 max-sm:p-2"
+			class="flex w-full items-center justify-between gap-2 p-3 text-[#fff4df] max-sm:flex-col max-sm:gap-1 max-sm:p-2"
 		>
 			<span class="text-md max-sm:text-sm">
 				{{ sessionStore.session.quiz?.title }}
@@ -22,7 +20,7 @@
 			</span>
 			<span
 				v-if="deadlineSeconds !== undefined"
-				class="rounded-full border border-gray-700 px-2.5 py-1 text-xs text-gray-400"
+				class="rounded-full border border-[#c8b7ff]/30 bg-[#c8b7ff]/10 px-2.5 py-1 text-xs text-[#daceff]"
 			>
 				{{ deadlineSeconds }} sn
 			</span>

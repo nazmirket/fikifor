@@ -1,9 +1,9 @@
 <template>
 	<div
-		class="flex items-center gap-1 rounded-full border bg-gray-900 py-2 pl-2.5 pr-4 max-sm:py-1 max-sm:pl-1.5 max-sm:pr-2.5"
+		class="flex items-center gap-1 rounded-full border bg-[#271c35] py-2 pl-2.5 pr-4 text-[#fff4df] max-sm:py-1 max-sm:pl-1.5 max-sm:pr-2.5"
 		:class="{
-			'border-green-700 border-opacity-80': participant.online,
-			'border-red-700 border-opacity-80': !participant.online,
+			'border-[#9fe0c1]/60': participant.online,
+			'border-[#ff795e]/40': !participant.online,
 		}"
 	>
 		<UIcon name="flowbite:user-solid" :size="20" />

@@ -15,10 +15,21 @@
 	<div
 		v-else
 		ref="element"
-		class="flex h-full w-full items-center justify-center rounded-lg bg-gray-200"
+		class="flex h-full w-full items-center justify-center rounded-lg border border-[#fff4df]/10 bg-[#271c35] px-4 py-6 text-center"
+		role="img"
+		:aria-label="failed ? alt || 'Görsel yüklenemedi' : 'Görsel yükleniyor'"
 	>
-		<UIcon v-if="!failed" name="svg-spinners:ring-resize" :size="36" />
-		<UIcon v-else name="heroicons-solid:exclamation" :size="36" />
+		<div class="flex flex-col items-center gap-2">
+			<span
+				class="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ff795e]/15 text-[#ff927d]"
+			>
+				<UIcon v-if="!failed" name="svg-spinners:ring-resize" :size="22" />
+				<UIcon v-else name="heroicons:photo" :size="22" />
+			</span>
+			<span v-if="failed" class="text-xs font-semibold text-[#ffb19f]">
+				Görsel yüklenemedi
+			</span>
+		</div>
 	</div>
 </template>
 

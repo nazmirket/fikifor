@@ -4,22 +4,35 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+	--fk-ink: #120f1a;
+	--fk-ink-soft: #1d1728;
+	--fk-card: rgba(31, 24, 42, 0.88);
+	--fk-card-strong: #271c35;
+	--fk-line: rgba(255, 244, 224, 0.13);
+	--fk-muted: #a69baa;
+	--fk-cream: #fff4df;
+	--fk-coral: #ff795e;
+	--fk-lilac: #c8b7ff;
+	--fk-mint: #9fe0c1;
+}
+
 .aspect-default {
 	aspect-ratio: 5/3 !important;
 }
 
 .vs-winner {
 	animation: tada 2500ms ease;
-	@apply divide-indigo-600 border-indigo-600 !bg-indigo-900;
+	@apply divide-[#ff795e] border-[#ff795e] !bg-[#3a2638];
 }
 
 .vs-winner img {
-	@apply border border-indigo-600;
+	@apply border border-[#ff795e];
 }
 
 .vs-loser {
 	animation: zoomOut 1000ms ease forwards;
-	@apply divide-gray-900 border-gray-900 !bg-black;
+	@apply divide-[#fff4df]/10 border-[#fff4df]/10 !bg-[#15111d];
 }
 
 @keyframes tada {
@@ -61,5 +74,93 @@ html,
 body,
 #__nuxt {
 	font-family: 'Poppins', sans-serif;
-	@apply h-full bg-gray-950 text-gray-400;
+	@apply h-full;
+	background: var(--fk-ink);
+	color: var(--fk-muted);
+}
+
+body {
+	background-image:
+		radial-gradient(circle at 12% 0%, rgba(255, 121, 94, 0.14), transparent 32rem),
+		radial-gradient(circle at 90% 18%, rgba(200, 183, 255, 0.12), transparent 30rem);
+}
+
+::selection {
+	background: rgba(255, 121, 94, 0.35);
+	color: var(--fk-cream);
+}
+
+a,
+button,
+input,
+textarea,
+select {
+	-webkit-tap-highlight-color: transparent;
+}
+
+:focus-visible {
+	outline: 3px solid rgba(200, 183, 255, 0.9);
+	outline-offset: 3px;
+}
+
+.fk-shell {
+	background:
+		linear-gradient(180deg, rgba(18, 15, 26, 0.85), rgba(18, 15, 26, 0.98)),
+		radial-gradient(circle at 78% 0%, rgba(255, 121, 94, 0.08), transparent 30rem);
+}
+
+.fk-display {
+	font-weight: 700;
+	letter-spacing: -0.055em;
+	line-height: 0.98;
+	color: var(--fk-cream);
+}
+
+.fk-eyebrow {
+	color: var(--fk-coral);
+	font-size: 0.72rem;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	line-height: 1.2;
+	text-transform: uppercase;
+}
+
+.fk-surface {
+	border: 1px solid var(--fk-line);
+	background: var(--fk-card);
+	box-shadow: 0 24px 70px rgba(5, 3, 9, 0.24);
+}
+
+.fk-button-primary {
+	background: var(--fk-coral);
+	box-shadow: 0 10px 26px rgba(255, 121, 94, 0.22);
+	color: #26131a;
+	font-weight: 700;
+}
+
+.fk-button-primary:hover {
+	background: #ff927d;
+}
+
+.fk-button-secondary {
+	border: 1px solid rgba(255, 244, 224, 0.18);
+	background: rgba(255, 244, 224, 0.06);
+	color: var(--fk-cream);
+	font-weight: 600;
+}
+
+.fk-button-secondary:hover {
+	border-color: rgba(200, 183, 255, 0.6);
+	background: rgba(200, 183, 255, 0.1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		scroll-behavior: auto !important;
+		transition-duration: 0.01ms !important;
+	}
 }

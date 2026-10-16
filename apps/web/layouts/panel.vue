@@ -1,33 +1,45 @@
 <template>
-	<div class="flex min-h-full w-full flex-col bg-gray-950 pt-[72px]">
+	<div class="fk-shell flex min-h-full w-full flex-col pt-[76px]">
 		<UNotifications />
 		<LoadingSpinner v-if="useLoading.isLoading()" />
 
 		<header
-			class="fixed inset-x-0 top-0 z-50 h-[72px] border-b border-gray-800/80 bg-gray-950/90 backdrop-blur"
+			class="fixed inset-x-0 top-0 z-50 h-[76px] border-b border-[#fff4e0]/10 bg-[#120f1a]/90 backdrop-blur-xl"
 		>
 			<div
 				class="mx-auto flex h-full max-w-7xl items-center justify-between px-4 sm:px-6"
 			>
-				<div class="flex items-center gap-8">
-					<NuxtLink to="/" class="flex items-center gap-2">
-						<img src="/brand.svg" alt="Fikifor" class="h-9 w-9" />
-						<span class="text-2xl font-bold tracking-tight text-gray-100">FIKIFOR</span>
+				<div class="flex items-center gap-6 sm:gap-10">
+					<NuxtLink to="/" class="group flex items-center gap-2.5">
+						<span
+							class="relative flex h-9 w-9 items-center justify-center overflow-hidden rounded-xl bg-[#742222] shadow-lg shadow-black/20"
+						>
+							<img
+								src="/brand.svg"
+								alt="Fikifor"
+								class="h-9 w-9 transition duration-300 group-hover:rotate-6"
+							/>
+						</span>
+						<span class="text-xl font-bold tracking-[-0.04em] text-[#fff4df] sm:text-2xl"
+							>FIKIFOR</span
+						>
 					</NuxtLink>
 
-					<nav class="hidden items-center gap-6 text-sm font-medium md:flex">
+					<nav
+						class="hidden items-center gap-1 rounded-full border border-[#fff4df]/10 bg-[#fff4df]/[0.04] p-1 text-sm font-medium md:flex"
+					>
 						<NuxtLink
 							to="/quizes"
-							class="transition hover:text-indigo-300"
-							active-class="text-indigo-300"
+							class="rounded-full px-4 py-2 text-[#a69baa] transition hover:bg-[#fff4df]/[0.08] hover:text-[#fff4df]"
+							active-class="bg-[#fff4df]/10 !text-[#fff4df]"
 						>
 							Quizleri Keşfet
 						</NuxtLink>
 						<NuxtLink
 							v-if="authStore.isLoggedIn"
 							to="/my-quizes"
-							class="transition hover:text-indigo-300"
-							active-class="text-indigo-300"
+							class="rounded-full px-4 py-2 text-[#a69baa] transition hover:bg-[#fff4df]/[0.08] hover:text-[#fff4df]"
+							active-class="bg-[#fff4df]/10 !text-[#fff4df]"
 						>
 							Listelerim
 						</NuxtLink>
@@ -37,7 +49,7 @@
 				<div class="flex items-center gap-2">
 					<NuxtLink
 						to="/quizes"
-						class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-800 md:hidden"
+						class="rounded-xl p-2.5 text-[#fff4df]/80 transition hover:bg-[#fff4df]/10 hover:text-[#fff4df] md:hidden"
 						aria-label="Quizleri keşfet"
 					>
 						<UIcon name="heroicons:magnifying-glass" :size="22" />
@@ -45,7 +57,7 @@
 					<NuxtLink
 						v-if="authStore.isLoggedIn"
 						to="/my-quizes"
-						class="rounded-lg p-2 text-gray-300 transition hover:bg-gray-800 md:hidden"
+						class="rounded-xl p-2.5 text-[#fff4df]/80 transition hover:bg-[#fff4df]/10 hover:text-[#fff4df] md:hidden"
 						aria-label="Listelerim"
 					>
 						<UIcon name="heroicons:rectangle-stack" :size="22" />
@@ -53,10 +65,10 @@
 
 					<UPopover v-if="authStore.isLoggedIn">
 						<button
-							class="flex items-center gap-2 rounded-full border border-gray-700 bg-gray-900 px-3 py-2 text-sm text-gray-200 transition hover:border-indigo-500"
+							class="flex items-center gap-2 rounded-full border border-[#fff4df]/15 bg-[#fff4df]/[0.06] px-2.5 py-1.5 text-sm text-[#fff4df] transition hover:border-[#c8b7ff]/60 sm:px-3 sm:py-2"
 						>
 							<span
-								class="flex h-7 w-7 items-center justify-center rounded-full bg-indigo-500/20 font-semibold text-indigo-300"
+								class="flex h-7 w-7 items-center justify-center rounded-full bg-[#ff795e]/20 font-semibold text-[#ffb19f]"
 							>
 								{{ authStore.user?.username?.slice(0, 1).toUpperCase() }}
 							</span>
@@ -64,16 +76,18 @@
 						</button>
 
 						<template #panel>
-							<div class="min-w-[180px] rounded-lg bg-gray-900 p-1">
+							<div
+								class="min-w-[180px] rounded-2xl border border-[#fff4df]/10 bg-[#271c35] p-1 shadow-2xl shadow-black/30"
+							>
 								<NuxtLink
 									to="/my-quizes"
-									class="flex items-center gap-2 rounded-md p-3 hover:bg-gray-800 hover:text-indigo-300"
+									class="flex items-center gap-2 rounded-xl p-3 hover:bg-[#fff4df]/10 hover:text-[#c8b7ff]"
 								>
 									<UIcon name="heroicons:rectangle-stack" :size="20" />
 									<span>Listelerim</span>
 								</NuxtLink>
 								<button
-									class="flex w-full items-center gap-2 rounded-md p-3 text-left hover:bg-gray-800 hover:text-indigo-300"
+									class="flex w-full items-center gap-2 rounded-xl p-3 text-left hover:bg-[#fff4df]/10 hover:text-[#c8b7ff]"
 									@click="logout"
 								>
 									<UIcon name="fluent:sign-out-20-regular" :size="20" />
@@ -86,13 +100,13 @@
 					<template v-else>
 						<NuxtLink
 							to="/login"
-							class="rounded-lg px-3 py-2 text-sm font-semibold text-gray-200 transition hover:bg-gray-800"
+							class="rounded-xl px-3 py-2 text-sm font-semibold text-[#fff4df]/85 transition hover:bg-[#fff4df]/10 hover:text-[#fff4df]"
 						>
 							Giriş Yap
 						</NuxtLink>
 						<NuxtLink
 							to="/signup"
-							class="hidden rounded-lg bg-indigo-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-400 sm:block"
+							class="hidden rounded-xl bg-[#ff795e] px-4 py-2 text-sm font-semibold text-[#26131a] shadow-lg shadow-[#ff795e]/15 transition hover:bg-[#ff927d] sm:block"
 						>
 							Hesap Oluştur
 						</NuxtLink>
@@ -105,8 +119,11 @@
 			<slot />
 		</main>
 
-		<footer class="border-t border-gray-900 px-6 py-8 text-center text-sm text-gray-600">
-			Fikifor · Birlikte seçmenin en eğlenceli yolu
+		<footer
+			class="border-t border-[#fff4df]/10 px-6 py-10 text-center text-sm text-[#a69baa]"
+		>
+			<span class="font-semibold text-[#fff4df]">Fikifor</span> · Birlikte seçmenin en
+			eğlenceli yolu
 		</footer>
 	</div>
 </template>

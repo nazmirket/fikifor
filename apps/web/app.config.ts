@@ -1,7 +1,7 @@
 export default defineAppConfig({
 	ui: {
-		primary: 'indigo',
-		gray: 'cool',
+		primary: 'orange',
+		gray: 'neutral',
 
 		input: {
 			default: {
@@ -39,7 +39,7 @@ export default defineAppConfig({
 			padding: {
 				xl: 'py-3 px-4',
 			},
-			base: 'text-center w-full flex justify-center items-center !font-bold',
+			base: 'text-center w-full flex justify-center items-center !font-bold rounded-xl',
 		},
 	},
 })

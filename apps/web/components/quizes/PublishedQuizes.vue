@@ -1,30 +1,25 @@
 <template>
 	<section aria-labelledby="public-quizzes-title">
 		<div class="flex flex-col gap-2">
-			<p class="text-sm font-semibold uppercase tracking-[0.2em] text-indigo-400">
-				Topluluk listeleri
-			</p>
+			<p class="fk-eyebrow"> Topluluk listeleri </p>
 			<div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
 				<div>
-					<h1
-						id="public-quizzes-title"
-						class="text-3xl font-bold text-gray-100 sm:text-4xl"
-					>
+					<h1 id="public-quizzes-title" class="fk-display text-4xl sm:text-5xl">
 						Quizleri keşfet
 					</h1>
-					<p class="mt-2 max-w-2xl text-gray-500">
+					<p class="mt-3 max-w-2xl text-[#a69baa]">
 						Bir liste seç, oyun odanı aç ve arkadaşlarını davet et.
 					</p>
 				</div>
 				<p
 					v-if="loading"
-					class="w-fit rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1.5 text-sm text-gray-500"
+					class="w-fit rounded-full border border-[#fff4df]/10 bg-[#fff4df]/[0.05] px-3 py-1.5 text-sm text-[#a69baa]"
 				>
 					Listeler yükleniyor...
 				</p>
 				<p
 					v-else
-					class="w-fit rounded-full border border-gray-800 bg-gray-900/70 px-3 py-1.5 text-sm text-gray-500"
+					class="w-fit rounded-full border border-[#fff4df]/10 bg-[#fff4df]/[0.05] px-3 py-1.5 text-sm text-[#a69baa]"
 				>
 					<span class="font-semibold text-gray-300">{{ total }}</span> yayınlanmış liste
 				</p>
@@ -32,7 +27,7 @@
 		</div>
 
 		<div
-			class="mt-8 grid gap-3 rounded-2xl border border-gray-800 bg-gray-900/50 p-4 shadow-sm shadow-black/20 sm:grid-cols-[minmax(0,1fr)_minmax(190px,220px)_48px]"
+			class="fk-surface mt-8 grid gap-3 rounded-2xl p-4 sm:grid-cols-[minmax(0,1fr)_minmax(190px,220px)_48px]"
 		>
 			<UInput
 				v-model="search"
@@ -71,7 +66,7 @@
 			<div
 				v-for="index in 6"
 				:key="index"
-				class="overflow-hidden rounded-2xl border border-gray-800 bg-gray-900"
+				class="overflow-hidden rounded-2xl border border-[#fff4df]/10 bg-[#1d1728]"
 			>
 				<div class="aspect-[5/3] animate-pulse bg-gray-800/70" />
 				<div class="space-y-4 p-5">
@@ -87,7 +82,7 @@
 			<article
 				v-for="quiz in quizes"
 				:key="quiz.id"
-				class="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-gray-800 bg-gray-900/70 transition duration-200 hover:-translate-y-1 hover:border-indigo-500/60 hover:shadow-xl hover:shadow-indigo-950/20"
+				class="group flex min-w-0 flex-col overflow-hidden rounded-2xl border border-[#fff4df]/10 bg-[#1d1728]/90 transition duration-200 hover:-translate-y-1 hover:border-[#ff795e]/60 hover:shadow-xl hover:shadow-[#ff795e]/10"
 			>
 				<div class="relative aspect-[5/3] overflow-hidden bg-gray-900">
 					<Image
@@ -98,26 +93,26 @@
 						class="h-full w-full rounded-none transition duration-300 group-hover:scale-[1.02]"
 					/>
 					<span
-						class="absolute right-3 top-3 rounded-full border border-white/10 bg-gray-950/80 px-3 py-1 text-xs font-semibold text-gray-200 backdrop-blur"
+						class="absolute right-3 top-3 rounded-full border border-[#fff4df]/15 bg-[#120f1a]/80 px-3 py-1 text-xs font-semibold text-[#fff4df] backdrop-blur"
 					>
 						{{ quiz.size }} seçenek
 					</span>
 				</div>
 
 				<div class="flex flex-1 flex-col p-5">
-					<div class="flex items-center justify-between gap-3 text-xs text-gray-500">
+					<div class="flex items-center justify-between gap-3 text-xs text-[#968a9c]">
 						<span class="min-w-0 truncate">{{ publisherName(quiz.owner) }}</span>
 						<span class="shrink-0">{{ formatDate(quiz.createdAt) }}</span>
 					</div>
-					<h2 class="mt-3 line-clamp-2 text-xl font-semibold text-gray-100">
+					<h2 class="mt-3 line-clamp-2 text-xl font-semibold text-[#fff4df]">
 						{{ quiz.title }}
 					</h2>
-					<p class="mt-2 line-clamp-3 text-sm leading-6 text-gray-500">
+					<p class="mt-2 line-clamp-3 text-sm leading-6 text-[#a69baa]">
 						{{ quiz.description }}
 					</p>
 
 					<div class="mt-auto pt-6">
-						<div class="flex shrink-0 items-center gap-1.5 text-sm text-gray-500">
+						<div class="flex shrink-0 items-center gap-1.5 text-sm text-[#968a9c]">
 							<UIcon name="heroicons:play-circle" :size="20" />
 							<span>{{ quiz.sessionCount }} oturum</span>
 						</div>
@@ -144,20 +139,20 @@
 
 		<div
 			v-else
-			class="my-8 flex flex-col items-center rounded-2xl border border-dashed border-gray-800 bg-gray-900/20 px-6 py-16 text-center sm:py-20"
+			class="my-8 flex flex-col items-center rounded-2xl border border-dashed border-[#fff4df]/15 bg-[#1d1728]/60 px-6 py-16 text-center sm:py-20"
 		>
 			<div
-				class="flex h-14 w-14 items-center justify-center rounded-2xl border border-gray-800 bg-gray-900 text-gray-500"
+				class="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#fff4df]/10 bg-[#271c35] text-[#a69baa]"
 			>
 				<UIcon
 					:name="hasSearch ? 'heroicons:magnifying-glass' : 'heroicons:rectangle-stack'"
 					:size="28"
 				/>
 			</div>
-			<h2 class="mt-5 text-lg font-semibold text-gray-300">
+			<h2 class="mt-5 text-lg font-semibold text-[#fff4df]">
 				{{ hasSearch ? 'Eşleşen quiz bulunamadı' : 'Henüz yayınlanmış quiz yok' }}
 			</h2>
-			<p class="mt-2 max-w-md text-sm leading-6 text-gray-600">
+			<p class="mt-2 max-w-md text-sm leading-6 text-[#968a9c]">
 				{{
 					hasSearch
 						? 'Arama sözcüğünü değiştirerek yeniden deneyebilirsin.'
@@ -187,7 +182,7 @@
 			>
 				Önceki
 			</UButton>
-			<span class="min-w-[100px] text-center text-sm text-gray-500">
+			<span class="min-w-[100px] text-center text-sm text-[#a69baa]">
 				{{ page }} / {{ totalPages }}
 			</span>
 			<UButton

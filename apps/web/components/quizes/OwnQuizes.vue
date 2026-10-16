@@ -1,5 +1,12 @@
 <template>
-	<UCard>
+	<UCard
+		:ui="{
+			base: 'fk-surface overflow-hidden rounded-2xl',
+			header: 'border-[#fff4df]/10 px-5 py-4 font-semibold text-[#fff4df]',
+			body: 'p-5',
+			footer: 'border-[#fff4df]/10 px-5 py-4 text-[#a69baa]',
+		}"
+	>
 		<template #header> Senin Eklediğin Quizler </template>
 
 		<div v-if="quizes?.length === 0"> Henüz quiz eklemediniz. </div>
@@ -7,7 +14,7 @@
 		<div v-else class="flex min-w-full gap-4 overflow-x-auto py-2">
 			<template v-for="quiz of quizes" :key="quiz.id">
 				<div
-					class="group relative flex min-w-fit cursor-pointer flex-col overflow-hidden rounded-lg border bg-gray-950 p-1.5 hover:border-indigo-500"
+					class="group relative flex min-w-fit cursor-pointer flex-col overflow-hidden rounded-2xl border border-[#fff4df]/10 bg-[#120f1a] p-1.5 transition hover:-translate-y-0.5 hover:border-[#ff795e]/60"
 					@click="
 						() => {
 							selected = quiz
