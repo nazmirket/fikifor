@@ -4,6 +4,7 @@ export default defineNuxtRouteMiddleware(to => {
 	const publicRoutes = new Set(['/', '/quizes', '/login', '/signup'])
 	const isPublicQuizRoute = to.path === '/quizes' || to.path.startsWith('/quizes/')
 	const isProtected = !publicRoutes.has(to.path) && !isPublicQuizRoute
+	if (!to.matched.length) return
 
 	// Check if token expired
 	const authStore = useAuthStore()

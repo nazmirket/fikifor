@@ -66,14 +66,14 @@
 						</div>
 
 						<div class="mt-auto pt-8">
-							<UButton
-								icon="heroicons:play"
-								:loading="starting"
-								class="fk-button-primary !w-full !rounded-xl !border-0 sm:!w-auto sm:px-8"
+							<button
+								type="button"
+								:disabled="starting"
+								class="fk-button-primary inline-flex min-h-11 w-full items-center justify-center rounded-xl px-5 py-3 font-semibold disabled:cursor-wait disabled:opacity-60 sm:w-auto sm:px-8"
 								@click="start"
 							>
 								Oyun odası aç
-							</UButton>
+							</button>
 							<p v-if="!authStore.isLoggedIn" class="mt-3 text-xs text-[#a69baa]">
 								Oda açmak için giriş yapman istenecek.
 							</p>
@@ -279,6 +279,7 @@ import { unlockGameAudio } from '~/utils/gameAudio'
 const route = useRoute()
 const authStore = useAuthStore()
 const quizStore = useQuizStore()
+const appUrl = useRuntimeConfig().public.APP_URL
 const loading = ref(true)
 const starting = ref(false)
 
@@ -322,8 +323,10 @@ async function load() {
 	try {
 		await Promise.all([quizStore.getQuiz(quizId), quizStore.getLeaderboard(quizId)])
 	} catch (error) {
+		const code =
+			error && typeof error === 'object' && 'code' in error ? error.code : undefined
 		throw createError({
-			statusCode: 404,
+			statusCode: code === 'NOT_FOUND' ? 404 : 503,
 			statusMessage: error instanceof Error ? error.message : 'Quiz bulunamadı',
 		})
 	} finally {
@@ -356,9 +359,22 @@ useSeoMeta({
 	title: () =>
 		quiz.value ? `${quiz.value.title} · Fikifor` : 'Quiz detayları · Fikifor',
 	description: () => quiz.value?.description ?? 'Quiz sonuçları ve topluluk sıralaması.',
+	ogTitle: () =>
+		quiz.value ? `${quiz.value.title} · Fikifor` : 'Quiz detayları · Fikifor',
+	ogDescription: () =>
+		quiz.value?.description ?? 'Quiz sonuçları ve topluluk sıralaması.',
+	ogType: 'website',
+	ogUrl: `${appUrl}/quizes/${quizId}`,
+	ogImage: `${appUrl}/og-image.png`,
+	ogImageAlt: () => quiz.value?.title ?? 'Fikifor quizleri',
+	twitterImage: `${appUrl}/og-image.png`,
+	robots: () => (quiz.value?.published ? 'index, follow' : 'noindex, nofollow'),
+})
+useHead({
+	link: [{ rel: 'canonical', href: `${appUrl}/quizes/${quizId}` }],
 })
 definePageMeta({ layout: 'panel' })
-onMounted(load)
+await callOnce(`quiz-${quizId}`, load)
 </script>
 
 <style scoped>

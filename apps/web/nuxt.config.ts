@@ -1,13 +1,32 @@
+const publicAppUrl = process.env.NUXT_PUBLIC_APP_URL || 'https://fikifor.mirket.dev'
+
 export default defineNuxtConfig({
 	app: {
 		head: {
-			title: 'Fikifor',
+			title: 'Fikifor · Birlikte seç',
 			meta: [
 				{ charset: 'utf-8' },
 				{ name: 'viewport', content: 'width=device-width, initial-scale=1' },
-				{ name: 'description', content: '' },
+				{
+					name: 'description',
+					content:
+						'Fikifor ile film, müzik, yemek ve seyahat seçeneklerini arkadaşlarınla birlikte oylayıp ortak favorini bul.',
+				},
+				{ name: 'theme-color', content: '#120f1a' },
+				{ name: 'robots', content: 'index, follow' },
+				{ property: 'og:site_name', content: 'Fikifor' },
+				{ property: 'og:type', content: 'website' },
+				{ property: 'og:image', content: `${publicAppUrl}/og-image.png` },
+				{ property: 'og:image:width', content: '1200' },
+				{ property: 'og:image:height', content: '630' },
+				{ name: 'twitter:card', content: 'summary_large_image' },
+				{ name: 'twitter:image', content: `${publicAppUrl}/og-image.png` },
 			],
-			link: [{ rel: 'icon', type: 'image/x-icon', href: `/brand.svg` }],
+			link: [
+				{ rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
+				{ rel: 'icon', type: 'image/svg+xml', href: '/brand.svg' },
+				{ rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' },
+			],
 		},
 	},
 
@@ -42,7 +61,7 @@ export default defineNuxtConfig({
 		},
 	],
 
-	ssr: false,
+	ssr: true,
 
 	runtimeConfig: {
 		public: {

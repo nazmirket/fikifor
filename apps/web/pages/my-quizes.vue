@@ -12,6 +12,10 @@
 </template>
 
 <script setup lang="ts">
-useSeoMeta({ title: 'Listelerim · Fikifor' })
+useSeoMeta({
+	title: 'Listelerim · Fikifor',
+	description: 'Fikifor listelerini yönet.',
+	robots: 'noindex, nofollow',
+})
 definePageMeta({ layout: 'panel' })
 </script>

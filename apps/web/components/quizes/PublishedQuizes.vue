@@ -29,37 +29,39 @@
 		<div
 			class="fk-surface mt-8 grid gap-3 rounded-2xl p-4 sm:grid-cols-[minmax(0,1fr)_minmax(190px,220px)_48px]"
 		>
-			<UInput
+			<input
 				v-model="search"
-				size="xl"
-				icon="heroicons:magnifying-glass"
+				type="search"
 				placeholder="Başlık, açıklama veya kullanıcı ara..."
 				aria-label="Quiz ara"
-				class="w-full"
+				class="h-12 w-full rounded-xl border border-[#fff4df]/15 bg-[#120f1a]/60 px-4 text-[#fff4df] outline-none transition placeholder:text-[#756a7b] focus:border-[#ff795e] focus:ring-2 focus:ring-[#ff795e]/20"
 			/>
-			<USelect
+			<select
 				v-model="sortBy"
-				size="xl"
-				:options="sortOptions"
-				option-attribute="label"
 				aria-label="Quizleri sırala"
-				select-class="h-12"
-				class="w-full"
-			/>
-			<UButton
-				variant="outline"
-				:icon="
-					sortOrder === 'desc' ? 'heroicons:bars-arrow-down' : 'heroicons:bars-arrow-up'
-				"
+				class="h-12 w-full rounded-xl border border-[#fff4df]/15 bg-[#120f1a]/60 px-4 text-[#fff4df] outline-none transition focus:border-[#ff795e] focus:ring-2 focus:ring-[#ff795e]/20"
+			>
+				<option v-for="option in sortOptions" :key="option.value" :value="option.value">
+					{{ option.label }}
+				</option>
+			</select>
+			<button
+				type="button"
 				:title="sortOrder === 'desc' ? 'Azalan sıralama' : 'Artan sıralama'"
 				:aria-label="sortOrder === 'desc' ? 'Azalan sıralama' : 'Artan sıralama'"
-				class="!h-12 !w-full sm:!w-12"
+				class="flex h-12 w-full items-center justify-center rounded-xl border border-[#fff4df]/15 bg-[#120f1a]/60 px-3 text-[#fff4df] transition hover:border-[#ff795e]/60 sm:w-12"
 				@click="sortOrder = sortOrder === 'desc' ? 'asc' : 'desc'"
 			>
+				<UIcon
+					:name="
+						sortOrder === 'desc' ? 'heroicons:bars-arrow-down' : 'heroicons:bars-arrow-up'
+					"
+					:size="20"
+				/>
 				<span class="sm:hidden">
 					{{ sortOrder === 'desc' ? 'Azalan' : 'Artan' }}
 				</span>
-			</UButton>
+			</button>
 		</div>
 
 		<div v-if="loading" class="grid gap-5 py-8 md:grid-cols-2 xl:grid-cols-3">
@@ -117,20 +119,20 @@
 							<span>{{ quiz.sessionCount }} oturum</span>
 						</div>
 						<div class="mt-4 grid grid-cols-2 gap-2">
-							<UButton
+							<NuxtLink
 								:to="`/quizes/${quiz.id}`"
-								variant="outline"
-								icon="heroicons:chart-bar"
+								class="fk-button-secondary inline-flex min-h-10 w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold"
 							>
 								Detaylar
-							</UButton>
-							<UButton
-								:loading="startingId === quiz.id"
-								icon="heroicons:play"
+							</NuxtLink>
+							<button
+								type="button"
+								:disabled="startingId === quiz.id"
+								class="fk-button-primary inline-flex min-h-10 w-full items-center justify-center rounded-xl px-3 py-2 text-sm font-semibold disabled:cursor-wait disabled:opacity-60"
 								@click="start(quiz.id)"
 							>
 								Oyna
-							</UButton>
+							</button>
 						</div>
 					</div>
 				</div>
@@ -173,28 +175,25 @@
 			v-if="totalPages > 1"
 			class="flex flex-wrap items-center justify-center gap-3 pb-6"
 		>
-			<UButton
-				variant="outline"
-				icon="heroicons:chevron-left"
-				class="!w-auto"
+			<button
+				type="button"
+				class="fk-button-secondary inline-flex min-h-10 w-auto items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
 				:disabled="page === 1"
 				@click="page--"
 			>
 				Önceki
-			</UButton>
+			</button>
 			<span class="min-w-[100px] text-center text-sm text-[#a69baa]">
 				{{ page }} / {{ totalPages }}
 			</span>
-			<UButton
-				variant="outline"
-				trailing
-				icon="heroicons:chevron-right"
-				class="!w-auto"
+			<button
+				type="button"
+				class="fk-button-secondary inline-flex min-h-10 w-auto items-center justify-center rounded-xl px-4 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-50"
 				:disabled="page === totalPages"
 				@click="page++"
 			>
 				Sonraki
-			</UButton>
+			</button>
 		</div>
 	</section>
 </template>
@@ -294,7 +293,8 @@ watch([sortBy, sortOrder], () => {
 })
 watch(page, load)
 
-onMounted(load)
+await callOnce('published-quizes', load)
+
 onBeforeUnmount(() => {
 	if (searchTimer) clearTimeout(searchTimer)
 })

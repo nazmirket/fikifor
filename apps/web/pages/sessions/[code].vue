@@ -18,7 +18,11 @@
 import { useSessionStore } from '~/store/session'
 const sessionStore = useSessionStore()
 
-useSeoMeta({ title: 'FIKIFOR' })
+useSeoMeta({
+	title: 'Oyun odası · Fikifor',
+	description: 'Fikifor oyun odası.',
+	robots: 'noindex, nofollow',
+})
 definePageMeta({ layout: 'session' })
 
 const code = computed(() => useRoute().params.code)

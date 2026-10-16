@@ -54,7 +54,7 @@ export const useAuthStore = defineStore(
 	},
 	{
 		persist: {
-			storage: localStorage,
+			storage: import.meta.client ? localStorage : undefined,
 			key: 'auth',
 		},
 	},

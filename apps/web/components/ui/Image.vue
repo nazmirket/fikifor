@@ -50,6 +50,7 @@ const props = withDefaults(
 
 const failed = ref(false)
 const objectUrl = ref<string>()
+const apiUrl = useRuntimeConfig().public.API_URL
 const responsiveSrcset = computed(() =>
 	props.isPublic
 		? ([320, 640, 1280] as const).map(width => `${fileUrl(width)} ${width}w`).join(', ')
@@ -61,7 +62,7 @@ let controller: AbortController | undefined
 let requestSequence = 0
 
 function fileUrl(width = props.width) {
-	const url = [useRuntimeConfig().public.API_URL, 'files', props.file.name].join('/')
+	const url = [apiUrl, 'files', props.file.name].join('/')
 	return `${url}?width=${width}`
 }
 

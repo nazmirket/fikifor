@@ -170,6 +170,7 @@
 import { useAuthStore } from '~/store/auth'
 
 const authStore = useAuthStore()
+const appUrl = useRuntimeConfig().public.APP_URL
 
 const roomOptions = [
 	{ title: 'Arrival', votes: 58, tone: 'bg-[#9d5c53]' },
@@ -201,6 +202,13 @@ const steps = [
 useSeoMeta({
 	title: 'Fikifor · Birlikte seç',
 	description: 'Listeni paylaş, arkadaşlarınla oyla ve favorinizi birlikte bulun.',
+	ogTitle: 'Fikifor · Birlikte seç',
+	ogDescription: 'Listeni paylaş, arkadaşlarınla oyla ve favorinizi birlikte bulun.',
+	ogUrl: appUrl,
+	ogImage: `${appUrl}/og-image.png`,
+	ogImageAlt: 'Fikifor ile arkadaşlarınla birlikte seçim yap',
+	twitterImage: `${appUrl}/og-image.png`,
 })
+useHead({ link: [{ rel: 'canonical', href: appUrl }] })
 definePageMeta({ layout: 'panel' })
 </script>

@@ -20,24 +20,24 @@
 		<form class="mt-8 space-y-5" @submit.prevent="send">
 			<label class="block">
 				<span class="mb-2 block text-sm font-semibold text-[#fff4df]">Kullanıcı adı</span>
-				<UInput
+				<input
 					id="login-username"
 					v-model="payload.username"
 					type="text"
 					autocomplete="username"
 					placeholder="kullanici_adin"
-					class="w-full"
+					class="w-full rounded-xl border border-[#fff4df]/15 bg-[#120f1a]/60 px-4 py-3 text-[#fff4df] outline-none transition placeholder:text-[#756a7b] focus:border-[#ff795e] focus:ring-2 focus:ring-[#ff795e]/20"
 				/>
 			</label>
 			<label class="block">
 				<span class="mb-2 block text-sm font-semibold text-[#fff4df]">Parola</span>
-				<UInput
+				<input
 					id="login-password"
 					v-model="payload.password"
 					placeholder="••••••••"
 					type="password"
 					autocomplete="current-password"
-					class="w-full"
+					class="w-full rounded-xl border border-[#fff4df]/15 bg-[#120f1a]/60 px-4 py-3 text-[#fff4df] outline-none transition placeholder:text-[#756a7b] focus:border-[#ff795e] focus:ring-2 focus:ring-[#ff795e]/20"
 				/>
 			</label>
 			<UButton
