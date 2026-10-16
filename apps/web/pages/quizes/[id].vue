@@ -375,6 +375,7 @@ useHead({
 })
 definePageMeta({ layout: 'panel' })
 await callOnce(`quiz-${quizId}`, load)
+loading.value = false
 </script>
 
 <style scoped>

@@ -294,6 +294,7 @@ watch([sortBy, sortOrder], () => {
 watch(page, load)
 
 await callOnce('published-quizes', load)
+loading.value = false
 
 onBeforeUnmount(() => {
 	if (searchTimer) clearTimeout(searchTimer)
