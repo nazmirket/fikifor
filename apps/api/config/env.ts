@@ -22,11 +22,20 @@ function trustProxy(value: string | undefined): boolean | number {
 }
 
 const nodeEnv = process.env.NODE_ENV ?? 'development'
-const jwtSecret =
-	process.env.JWT_SECRET ?? 'local-development-secret-change-before-deployment'
+const developmentJwtSecret = 'local-development-secret-change-before-deployment'
+const configuredJwtSecret = process.env.JWT_SECRET
+const jwtSecret = configuredJwtSecret ?? developmentJwtSecret
+const isPlaceholderJwtSecret =
+	configuredJwtSecret === developmentJwtSecret ||
+	configuredJwtSecret?.startsWith('replace-with-')
 
-if (nodeEnv === 'production' && jwtSecret.length < 32) {
-	throw new Error('JWT_SECRET must contain at least 32 characters in production')
+if (
+	nodeEnv === 'production' &&
+	(!configuredJwtSecret || isPlaceholderJwtSecret || configuredJwtSecret.length < 32)
+) {
+	throw new Error(
+		'JWT_SECRET must be explicitly configured with at least 32 characters in production',
+	)
 }
 
 export const env = {

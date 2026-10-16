@@ -7,7 +7,7 @@ x-default-logging: &default-logging
     max-file: '${LOG_MAX_FILES:-5}'
 
 x-api-environment: &api-environment
-  NODE_ENV: production
+  NODE_ENV: development
   DEFAULT_PORT: '3001'
   SOCKET_PORT: '3002'
   JWT_SECRET: ${JWT_SECRET:-local-development-secret-change-before-deployment}

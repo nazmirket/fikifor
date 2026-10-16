@@ -51,19 +51,19 @@
 		"express-rate-limit": "^8.1.0",
 		"helmet": "^8.1.0",
 		"jsonwebtoken": "^9.0.2",
-		"multer": "^2.0.2",
+		"multer": "^2.4.0",
 		"pg": "^8.13.1",
 		"pino": "^10.1.0",
 		"pino-http": "^11.0.0",
 		"redis": "^6.1.0",
-		"sharp": "^0.35.3",
+		"sharp": "^0.35.5",
 		"socket.io": "^4.8.1",
 		"socket.io-client": "^4.8.1",
-		"undici": "^7.16.0",
+		"undici": "^7.29.1",
 		"zod": "^4.3.6"
 	},
 	"engines": {
-		"node": ">=20.0.0",
+		"node": ">=24.0.0",
 		"pnpm": ">=10.0.0"
 	}
 }

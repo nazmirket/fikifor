@@ -22,7 +22,9 @@ export const logger = pino({
 export const requestLogger = pinoHttp({
 	logger,
 	genReqId(req, res) {
-		const requestId = req.headers['x-request-id']?.toString() ?? randomUUID()
+		const supplied = req.headers['x-request-id']?.toString()
+		const requestId =
+			supplied && /^[A-Za-z0-9._:-]{1,128}$/.test(supplied) ? supplied : randomUUID()
 		res.setHeader('x-request-id', requestId)
 		return requestId
 	},

@@ -47,9 +47,7 @@ export function trimOuter(str: string) {
 // Generate short id
 // following function generates short id
 export function shortid() {
-	const p1 = Math.random().toString(36).slice(-8).toUpperCase()
-	const p2 = Date.now().toString(36).slice(-6).toUpperCase()
-	return [p1, p2].join('')
+	return randomCharacters('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ', 14)
 }
 
 // Convert to base64 string

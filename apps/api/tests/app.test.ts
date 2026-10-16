@@ -46,4 +46,16 @@ describe('HTTP application boundaries', () => {
 			.expect(403)
 		expect(response.body.error.code).toBe('FORBIDDEN')
 	})
+
+	it('replaces malformed request IDs before logging or reflecting them', async () => {
+		const response = await request(app)
+			.get('/health')
+			.set('x-request-id', 'attacker supplied id')
+			.expect(200)
+
+		expect(response.headers['x-request-id']).toMatch(
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
+		)
+		expect(response.headers['x-request-id']).not.toBe('attacker supplied id')
+	})
 })
