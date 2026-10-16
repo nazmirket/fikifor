@@ -5,6 +5,8 @@ export default defineNuxtRouteMiddleware(to => {
 	const isPublicQuizRoute = to.path === '/quizes' || to.path.startsWith('/quizes/')
 	const isProtected = !publicRoutes.has(to.path) && !isPublicQuizRoute
 	if (!to.matched.length) return
+	// Authentication is persisted in browser storage, so only the client can check it.
+	if (import.meta.server) return
 
 	// Check if token expired
 	const authStore = useAuthStore()

@@ -7,7 +7,9 @@
 				Listelerini düzenle, yayın durumlarını yönet veya yeni bir oyun başlat.
 			</p>
 		</div>
-		<OwnQuizes />
+		<ClientOnly>
+			<OwnQuizes />
+		</ClientOnly>
 	</div>
 </template>
 
