@@ -11,11 +11,12 @@ From the repository root:
 
 ```bash
 podman build --file apps/api/Dockerfile --tag fikifor-api:latest .
+podman build --file apps/api/Dockerfile --target migration --tag fikifor-api-migrate:latest .
 podman build --file apps/web/Dockerfile --tag fikifor-web:latest .
 ```
 
 For remote deployments, push immutable version tags or digest-pinned images and
-set `FIKIFOR_API_IMAGE` and `FIKIFOR_WEB_IMAGE` accordingly.
+set `FIKIFOR_API_IMAGE`, `FIKIFOR_MIGRATE_IMAGE`, and `FIKIFOR_WEB_IMAGE` accordingly.
 
 ## Configure and start
 

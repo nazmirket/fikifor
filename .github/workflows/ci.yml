@@ -62,4 +62,9 @@ jobs:
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
       - run: docker build --file apps/api/Dockerfile --tag fikifor-api:ci .
+      - run: |
+          docker run --rm fikifor-api:ci node -e "new (require('@prisma/client').PrismaClient)()"
+          docker run --rm --entrypoint sh fikifor-api:ci -c \
+            'test -z "$(find /app/node_modules/.pnpm -maxdepth 1 -type d \( -name "@nuxt+ui@*" -o -name "@nuxt+devtools*@*" -o -name "simple-git@*" -o -name "vite@*" \) -print -quit)"'
+      - run: docker build --file apps/api/Dockerfile --target migration --tag fikifor-api-migrate:ci .
       - run: docker build --file apps/web/Dockerfile --tag fikifor-web:ci .

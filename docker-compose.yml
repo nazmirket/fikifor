@@ -34,6 +34,18 @@ x-api-service: &api-service
     - app
     - data
 
+x-migrate-service: &migrate-service
+  image: fikifor-api-migrate:${FIKIFOR_IMAGE_TAG:-local}
+  build:
+    context: .
+    dockerfile: apps/api/Dockerfile
+    target: migration
+  environment: *api-environment
+  logging: *default-logging
+  networks:
+    - app
+    - data
+
 services:
   postgres:
     image: postgres:16-alpine
@@ -73,7 +85,7 @@ services:
       - data
 
   migrate:
-    <<: *api-service
+    <<: *migrate-service
     restart: 'no'
     command: ['/app/node_modules/.bin/prisma', 'migrate', 'deploy']
     depends_on:
