@@ -15,7 +15,7 @@ items, and continue through successive rounds until one item wins.
 fikifor/
 ├── apps/
 │   ├── api/                 # Express, Socket.IO, Prisma, and uploaded files
-│   └── web/                 # Nuxt 3 single-page application
+│   └── web/                 # Nuxt 3 web application
 ├── packages/
 │   └── contracts/           # Shared API schemas, domain types, and socket events
 ├── deploy/                  # Production Compose contract and environment template
@@ -40,7 +40,7 @@ checks, and log rotation.
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 24+
 - pnpm 10.33+
 - PostgreSQL 14+ for host-based development
 - Podman 6+ with podman-compose for the containerized workflow
@@ -165,3 +165,10 @@ lifecycle and restart behavior.
   <img src="./public/ss1.png" alt="Game Session Screenshot 1" width="45%" />
   <img src="./public/ss2.png" alt="Game Session Screenshot 2" width="45%" />
 </div>
+
+## Agent development
+
+Both Codex Desktop and Claude Desktop Code use the Mirket harness. Follow
+[AGENTS.md](AGENTS.md) for setup, selected expertise, worker routing and
+application verification. Run `pnpm agents:check` before delivery; the dedicated
+Mirket CI workflow checks the committed integration and real failure probes.

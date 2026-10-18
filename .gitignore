@@ -28,3 +28,12 @@ coverage
 # Project specific
 apps/api/files/*
 !apps/api/files/.gitkeep
+
+# Local agent state (managed project skills remain versioned)
+.mirket/project.lock
+.claude/settings.local.json
+.codex/
+
+# Browser test output
+playwright-report/
+test-results/

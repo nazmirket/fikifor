@@ -25,3 +25,8 @@
 
 apps/api/files
 public
+AGENTS.md
+CLAUDE.md
+scripts/harness.node.mjs
+playwright-report
+test-results
