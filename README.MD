@@ -1,174 +1,139 @@
-# Fikifor 🎮
+# Fikifor
 
-<div align="center">
-  <img src="./public/brand.svg" alt="Fikifor Logo" width="200" />
+**Turn a group decision into a live elimination tournament.**
 
-  **A real-time multiplayer quiz tournament game**
-</div>
+Create a visual list, invite friends to a room, and vote on pairs of items until
+one favorite remains. Fikifor brings real-time voting to choices such as films,
+music, food, and travel. The current interface is in Turkish.
 
-Fikifor lets players join live elimination tournaments, vote on paired quiz
-items, and continue through successive rounds until one item wins.
+[Open Fikifor](https://fikifor.mirket.dev/) · [Local setup](#run-locally) · [Deployment](deploy/README.md) · [Report an issue](https://github.com/nazmirket/fikifor/issues)
 
-## Monorepo structure
+[![Fikifor home page with visual lists and live voting rooms](docs/images/preview.png)](https://fikifor.mirket.dev/)
 
-```text
-fikifor/
-├── apps/
-│   ├── api/                 # Express, Socket.IO, Prisma, and uploaded files
-│   └── web/                 # Nuxt 3 web application
-├── packages/
-│   └── contracts/           # Shared API schemas, domain types, and socket events
-├── deploy/                  # Production Compose contract and environment template
-├── public/                  # Repository documentation assets
-├── docker-compose.yml       # Local full-stack Compose environment
-├── package.json             # Root workspace commands
-├── pnpm-lock.yaml           # Single dependency lockfile
-└── pnpm-workspace.yaml      # Workspace package discovery
-```
+## Features
 
-The API and Socket.IO server share one package and container image, but run as
-separate Node processes. Podman owns process lifecycle, restart policy, health
-checks, and log rotation.
+- **Visual lists:** create quizzes with images and discover public lists.
+- **Shared rooms:** invite participants with a session link or code.
+- **Live voting:** follow votes and progress together through elimination rounds.
+- **Persistent results:** store quizzes, sessions, and outcomes in PostgreSQL.
+- **Real-time coordination:** Socket.IO and Redis support room events and presence.
 
-## Technology
+## Run locally
 
-- Nuxt 3, Vue, Nuxt UI, Tailwind CSS, and Pinia
-- Express, Socket.IO, TypeScript, Zod, and Prisma
-- PostgreSQL and Redis
-- pnpm workspaces
-- Podman and podman-compose
+Use **Node.js 24**, **pnpm 10.33.0**, and **Podman with a Compose provider**.
+Start the Podman machine first on macOS or Windows.
 
-## Requirements
-
-- Node.js 24+
-- pnpm 10.33+
-- PostgreSQL 14+ for host-based development
-- Podman 6+ with podman-compose for the containerized workflow
-
-## Full stack with Podman
-
-The shortest path to a running local installation is:
-
-```bash
+```sh
+git clone https://github.com/nazmirket/fikifor.git
+cd fikifor
 corepack enable
 pnpm podman:up
 ```
 
-Compose builds both application images, starts PostgreSQL and Redis, applies
-Prisma migrations, and then starts the API, Socket.IO, and web containers.
+Compose builds the application images, starts PostgreSQL and Redis, applies
+committed migrations, and starts the API, socket server, and web app.
 
-- Web: http://localhost:3000
-- API health: http://localhost:3001/health
-- Socket health: http://localhost:3002/health
+| Service | Local address |
+| --- | --- |
+| Web app | http://localhost:3000 |
+| API health | http://localhost:3001/health |
+| Socket health | http://localhost:3002/health |
 
-Follow logs or stop the stack with:
-
-```bash
+```sh
 pnpm podman:logs
 pnpm podman:down
 ```
 
-The default credentials and JWT secret are intended only for local use. Use the
-production environment template under `deploy/` for an actual deployment.
+The default credentials and JWT secret are for local development. Configure
+production credentials and a TLS reverse proxy using the
+[deployment guide](deploy/README.md).
 
-## Host-based development
+## Develop on the host
 
-Install all workspace dependencies once from the repository root:
+From the repository root, install dependencies and create the API environment:
 
-```bash
-corepack enable
-pnpm install
+```sh
+pnpm install --frozen-lockfile
 cp apps/api/.env.example apps/api/.env
-```
-
-Start PostgreSQL and Redis through Podman and apply migrations:
-
-```bash
 podman compose up -d postgres redis
+pnpm db:build
 pnpm db:deploy
 ```
 
-The local Compose PostgreSQL port is `5433` to avoid colliding with a common
-host installation on port `5432`. Redis binds to `6380`.
+Wait for PostgreSQL to become healthy before applying migrations. The example
+environment uses PostgreSQL on port `5433` and Redis on `6380`, matching Compose.
+Set a local `JWT_SECRET` in `apps/api/.env` before starting the API.
 
-Run each long-lived process in its own terminal:
+Run each process in its own terminal:
 
-```bash
+```sh
 pnpm dev:api
 pnpm dev:socket
 pnpm dev:web
 ```
 
-The web application defaults to the local API and socket URLs. Nuxt runtime
-values can be overridden with `NUXT_PUBLIC_APP_URL`,
-`NUXT_PUBLIC_API_URL`, and `NUXT_PUBLIC_SOCKET_URL`.
+The web app's public runtime configuration can be overridden with
+`NUXT_PUBLIC_APP_URL`, `NUXT_PUBLIC_API_URL`, and `NUXT_PUBLIC_SOCKET_URL`.
 
-## Root commands
+## Project structure
 
-| Command | Purpose |
+| Path | Responsibility |
 | --- | --- |
-| `pnpm build` | Build every workspace application |
-| `pnpm lint` | Lint and verify formatting with zero warnings |
-| `pnpm typecheck` | Type-check every workspace package |
-| `pnpm test` | Run contract, HTTP, socket, security, and tournament tests |
-| `pnpm db:build` | Rebuild the composed Prisma schema and client |
-| `pnpm db:migrate` | Create or apply development migrations |
-| `pnpm db:deploy` | Apply committed migrations |
-| `pnpm podman:up` | Build and start the local full stack |
-| `pnpm podman:down` | Stop the local stack |
+| `apps/web/` | Nuxt, Vue, Nuxt UI, Tailwind CSS, and Pinia web application |
+| `apps/api/` | Express API, Socket.IO server, Prisma models, and uploads |
+| `packages/contracts/` | Shared Zod schemas, domain types, and socket events |
+| `deploy/` | Production Compose configuration and deployment instructions |
+| `docker-compose.yml` | Local full-stack environment |
 
-## Database workflow
+The API and socket server use the same package and image, running as separate
+Node processes. PostgreSQL stores durable state; Redis coordinates live rooms.
+The pnpm workspace uses one root dependency lockfile.
 
-Prisma model fragments live in `apps/api/prisma/schemas/`.
-`pnpm db:build` combines them with `apps/api/prisma/config.prisma`, writes
-`apps/api/prisma/schema.prisma`, and generates the Prisma client.
+## Verify changes
 
-Commit every production schema change as a migration:
+```sh
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm build
+```
 
-```bash
+Database integration tests require a **disposable, migrated test database** and
+`TEST_DATABASE_URL`; socket tests also require Redis. Without that variable,
+database integration suites are skipped. See
+[the CI workflow](.github/workflows/ci.yml) for the complete test environment.
+
+For browser tests, build the applications first, install Chromium, and run:
+
+```sh
+pnpm exec playwright install chromium
+pnpm test:e2e
+```
+
+CI runs lint, type checks, tests, builds, browser tests, and API/migration/web
+container builds. Validate Compose changes with `podman compose config --quiet`.
+
+## Database changes
+
+Model fragments live in `apps/api/prisma/schemas/`. `pnpm db:build` combines them
+with `prisma/config.prisma` and generates the Prisma client.
+
+```sh
 pnpm db:build
 pnpm db:migrate -- --name describe_the_change
 ```
 
-Podman startup runs `prisma migrate deploy` in a one-shot migration container
-before either backend service starts.
+Commit schema changes with their migrations. Use `pnpm db:deploy` to apply
+committed migrations; the Compose migration service runs this step before the
+backend starts. For existing databases and production backups, follow the
+[deployment guide](deploy/README.md).
 
-Votes are committed under a PostgreSQL session-level advisory lock. Match
-completion, persisted winner selection, and next-round creation therefore
-happen exactly once even when final votes arrive simultaneously or multiple
-socket instances are running. Socket.IO uses Redis for cross-instance rooms and
-multi-tab presence.
+## Contributing
 
-## Quality and security
+Use [GitHub Issues](https://github.com/nazmirket/fikifor/issues) for reproducible
+bugs and focused feature proposals. Include the steps, expected behavior, and
+relevant environment details when reporting a problem.
 
-- REST and Socket.IO payloads share Zod schemas from `packages/contracts`.
-- Authentication has expiring JWTs, rate limits, explicit CORS origins, and
-  hardened HTTP headers.
-- Uploaded and linked images have type, size, pixel, timeout, redirect, and
-  private-network protections.
-- API and socket processes expose liveness and dependency-aware readiness
-  endpoints and shut down gracefully on `SIGTERM`.
-- `.github/workflows/ci.yml` runs migrations, lint, type checks, tests, builds,
-  and both Docker image builds.
-
-## Production deployment
-
-See [deploy/README.md](./deploy/README.md) for image build, configuration,
-reverse-proxy, migration, persistent-volume, and upgrade instructions.
-
-Production uses direct Node processes inside containers; Podman owns their
-lifecycle and restart behavior.
-
-## Screenshots
-
-<div align="center">
-  <img src="./public/ss1.png" alt="Game Session Screenshot 1" width="45%" />
-  <img src="./public/ss2.png" alt="Game Session Screenshot 2" width="45%" />
-</div>
-
-## Agent development
-
-Both Codex Desktop and Claude Desktop Code use the Mirket harness. Follow
-[AGENTS.md](AGENTS.md) for setup, selected expertise, worker routing and
-application verification. Run `pnpm agents:check` before delivery; the dedicated
-Mirket CI workflow checks the committed integration and real failure probes.
+For agent-assisted development, [AGENTS.md](AGENTS.md) documents the Mirket
+workflow for Codex Desktop and Claude Desktop Code. Run `pnpm agents:check`
+alongside the applicable application checks.
