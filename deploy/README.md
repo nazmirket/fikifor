@@ -18,6 +18,12 @@ podman build --file apps/web/Dockerfile --tag fikifor-web:latest .
 For remote deployments, push immutable version tags or digest-pinned images and
 set `FIKIFOR_API_IMAGE`, `FIKIFOR_MIGRATE_IMAGE`, and `FIKIFOR_WEB_IMAGE` accordingly.
 
+The API image uses pnpm's current workspace deployment with injected workspace
+packages. `syncInjectedDepsAfterScripts: [build]` refreshes the compiled contracts
+before deployment. The isolated production dependency tree contains those
+contracts; the runtime does not copy a second workspace package tree. The generated
+Prisma client is copied into that isolated tree and checked by CI.
+
 ## Configure and start
 
 ```bash

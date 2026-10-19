@@ -211,8 +211,6 @@ export interface QuizLeaderboardEntry {
 	averageRank: number
 	weightedScore: number
 	scorePercentage: number
-	/** @deprecated Use scorePercentage. */
-	share: number
 }
 
 export interface QuizLeaderboard {

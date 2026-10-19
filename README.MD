@@ -33,10 +33,10 @@ pnpm podman:up
 Compose builds the application images, starts PostgreSQL and Redis, applies
 committed migrations, and starts the API, socket server, and web app.
 
-| Service | Local address |
-| --- | --- |
-| Web app | http://localhost:3000 |
-| API health | http://localhost:3001/health |
+| Service       | Local address                |
+| ------------- | ---------------------------- |
+| Web app       | http://localhost:3000        |
+| API health    | http://localhost:3001/health |
 | Socket health | http://localhost:3002/health |
 
 ```sh
@@ -75,15 +75,18 @@ pnpm dev:web
 The web app's public runtime configuration can be overridden with
 `NUXT_PUBLIC_APP_URL`, `NUXT_PUBLIC_API_URL`, and `NUXT_PUBLIC_SOCKET_URL`.
 
+Leaderboard entries expose their normalized result as `scorePercentage`. Clients
+must use that field; the deprecated `share` response alias has been removed.
+
 ## Project structure
 
-| Path | Responsibility |
-| --- | --- |
-| `apps/web/` | Nuxt, Vue, Nuxt UI, Tailwind CSS, and Pinia web application |
-| `apps/api/` | Express API, Socket.IO server, Prisma models, and uploads |
-| `packages/contracts/` | Shared Zod schemas, domain types, and socket events |
-| `deploy/` | Production Compose configuration and deployment instructions |
-| `docker-compose.yml` | Local full-stack environment |
+| Path                  | Responsibility                                               |
+| --------------------- | ------------------------------------------------------------ |
+| `apps/web/`           | Nuxt, Vue, Nuxt UI, Tailwind CSS, and Pinia web application  |
+| `apps/api/`           | Express API, Socket.IO server, Prisma models, and uploads    |
+| `packages/contracts/` | Shared Zod schemas, domain types, and socket events          |
+| `deploy/`             | Production Compose configuration and deployment instructions |
+| `docker-compose.yml`  | Local full-stack environment                                 |
 
 The API and socket server use the same package and image, running as separate
 Node processes. PostgreSQL stores durable state; Redis coordinates live rooms.

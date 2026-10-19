@@ -478,10 +478,6 @@ export async function getQuizLeaderboard(
 			scorePercentage: Number(
 				((row.weightedScore / (quiz.size * participantWeight)) * 100).toFixed(1),
 			),
-			// Kept as a response alias for existing API consumers.
-			share: Number(
-				((row.weightedScore / (quiz.size * participantWeight)) * 100).toFixed(1),
-			),
 		}
 	})
 

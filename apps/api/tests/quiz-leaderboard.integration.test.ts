@@ -170,6 +170,7 @@ integration('participant-weighted quiz leaderboard', () => {
 			participantWeight: 11,
 		})
 		expect(leaderboard.entries).toHaveLength(4)
+		for (const entry of leaderboard.entries) expect(entry).not.toHaveProperty('share')
 		expect(leaderboard.entries[0]).toMatchObject({
 			rank: 1,
 			item: { id: itemIds[0], title: 'First city' },
@@ -177,7 +178,6 @@ integration('participant-weighted quiz leaderboard', () => {
 			averageRank: 1.73,
 			weightedScore: 36,
 			scorePercentage: 81.8,
-			share: 81.8,
 		})
 		expect(leaderboard.entries[1]).toMatchObject({
 			rank: 2,

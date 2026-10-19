@@ -24,7 +24,7 @@ RUN pnpm --filter @fikifor/contracts build \
 
 FROM build AS production-dependencies
 
-RUN pnpm --filter @fikifor/api deploy --prod --legacy /prod/api \
+RUN pnpm --filter @fikifor/api deploy --prod /prod/api \
   && build_prisma="$(find /app/node_modules/.pnpm -path '*/node_modules/.prisma/client' -type d -print -quit)" \
   && prod_client="$(find /prod/api/node_modules/.pnpm -path '*/node_modules/@prisma/client' -type d -print -quit)" \
   && test -n "$build_prisma" \
@@ -63,8 +63,6 @@ COPY --from=production-dependencies --chown=node:node /prod/api/node_modules ./n
 COPY --from=production-dependencies --chown=node:node /prod/api/package.json ./apps/api/package.json
 COPY --from=build --chown=node:node /app/apps/api/build ./apps/api/build
 COPY --from=build --chown=node:node /app/apps/api/prisma ./apps/api/prisma
-COPY --from=build --chown=node:node /app/packages/contracts/package.json ./packages/contracts/package.json
-COPY --from=build --chown=node:node /app/packages/contracts/dist ./packages/contracts/dist
 
 RUN mkdir -p /app/apps/api/files && chown -R node:node /app/apps/api/files
 
