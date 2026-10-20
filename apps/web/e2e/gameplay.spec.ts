@@ -22,7 +22,7 @@ const jpegPixel = Buffer.from(
 )
 
 test.beforeAll(async ({ request }) => {
-	const signup = await request.post('http://127.0.0.1:3001/api/v1/auth/signup', {
+	const signup = await request.post(`${process.env.E2E_API_URL}/api/v1/auth/signup`, {
 		data: { username, password, passwordConfirmation: password },
 	})
 	expect(signup.ok()).toBe(true)
@@ -88,7 +88,7 @@ test.afterAll(async () => {
 
 test('restores countdown after reload and completes the winner animation', async ({
 	page,
-}) => {
+}, testInfo) => {
 	const errors: string[] = []
 	page.on('console', message => {
 		if (message.type() === 'error') errors.push(message.text())
@@ -102,6 +102,9 @@ test('restores countdown after reload and completes the winner animation', async
 	await expect(page).toHaveURL(new RegExp(`/sessions/${code}$`))
 
 	await page.getByRole('button', { name: 'Başlat' }).click()
+	// Reload only after the server confirms the durable start. A click does not
+	// acknowledge a Socket.IO mutation and navigation can discard an unsent packet.
+	await expect(page.getByText(/Başlıyor \(\d+ sn\)/)).toBeVisible()
 	await page.reload()
 	await expect(page.getByText(/Başlıyor \(\d+ sn\)/)).toBeVisible()
 
@@ -113,5 +116,6 @@ test('restores countdown after reload and completes the winner animation', async
 	await expect
 		.poll(() => cards.nth(1).evaluate(element => getComputedStyle(element).opacity))
 		.toBe('0')
+	await page.screenshot({ path: testInfo.outputPath('winner.png'), fullPage: true })
 	expect(errors).toEqual([])
 })

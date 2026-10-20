@@ -22,6 +22,10 @@ export default [
 	...vue.configs['flat/essential'],
 	prettier,
 	{
+		files: ['scripts/**/*.mjs', 'playwright.config.ts'],
+		languageOptions: { globals: globals.node },
+	},
+	{
 		files: ['apps/api/**/*.ts', 'packages/contracts/**/*.ts'],
 		languageOptions: {
 			globals: globals.node,

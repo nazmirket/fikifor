@@ -1,10 +1,17 @@
 import { defineConfig } from 'vitest/config'
 
+import { testEnvironment } from './tests/environment'
+
+const integrationEnvironment = process.env.TEST_DATABASE_URL
+	? testEnvironment(process.env)
+	: {}
+
 export default defineConfig({
 	test: {
 		environment: 'node',
 		fileParallelism: false,
 		env: {
+			...integrationEnvironment,
 			NODE_ENV: 'test',
 			JWT_SECRET: 'test-secret-that-is-long-enough-for-fikifor',
 			CORS_ORIGINS: 'http://localhost:3000',

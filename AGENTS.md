@@ -1,111 +1,76 @@
 # Fikifor repository workflow
 
-Fikifor is a pnpm monorepo: `apps/web` owns the Nuxt client, `apps/api` owns
-Express, Socket.IO and Prisma, and `packages/contracts` owns shared schemas and
-events. Preserve API/socket contracts, authentication, tournament concurrency
-and migration history. PostgreSQL and Redis are real integration dependencies.
-
-Selected specialists cover frontend, backend, database, infrastructure,
-technical leadership across services, and search visibility. Deployment
-instructions belong to `deploy/README.md`.
+Fikifor is a pnpm monorepo. `apps/web` owns Nuxt and browser state;
+`apps/api` owns Express, Socket.IO, Prisma and uploads; `packages/contracts`
+owns shared schemas and events. Preserve authentication, API/socket contracts,
+tournament concurrency and migration history. PostgreSQL and Redis are real
+integration dependencies. Deployment and persistent data belong to
+`deploy/README.md`.
 
 ## Harness ownership
 
-Mirket owns reviewed expertise, managed skill copies and its routed workers.
-`AGENTS.md` owns repository instructions; `CLAUDE.md` imports it. The manifest
-`.mirket/project.json` selects the same expertise for Codex Desktop and Claude
-Desktop Code. `.agents/skills/` and `.claude/skills/` are Mirket-managed copies,
-including integrity receipts and license notices; maintain them with the CLI.
+Mirket owns managed expertise and its routed workers. This file owns project
+constraints; `CLAUDE.md` imports it. `.mirket/project.json` selects the same
+expertise for Codex Desktop and Claude Desktop Code. Maintain `.agents/skills/`
+and `.claude/skills/`, receipts and notices only through the supported CLI.
 `project-foundation` supplies architecture, debugging, testing and release
-methods. Shared planning, security, research and coordination guidance comes
-from the global installation, not duplicate project copies.
+methods. The six selected specialists cover actual web, API, database,
+infrastructure, cross-service leadership and search boundaries. Global guidance
+owns planning, security, research, coordination and design methods.
 
-On a new machine, install the published CLI from
-[codemirket/harness](https://github.com/codemirket/harness/releases), then run:
+The reviewed public release and platform digests are pinned in
+`scripts/mirket-release.json`. CI and `pnpm agents:check` consume that single
+pin. See [harness onboarding and provenance](docs/harness.md) before upgrading.
+Use `mirket update --check --json`, compare stable releases by publication date,
+and use `mirket update --json` only when installed content needs updating.
+Never substitute a source build or bypass a digest mismatch.
 
-```sh
-mirket setup --target all --yes
-mirket project init --project "$PWD" --target all
-mirket project plan --project "$PWD"
-mirket project sync --project "$PWD" --prune
-mirket project doctor --project "$PWD"
-```
-
-The reviewed release is [mirket-v1.0.5](https://github.com/codemirket/harness/releases/tag/mirket-v1.0.5),
-published 2026-10-19T07:23:26Z. Resolve future releases by publication time,
-not the largest historical version. Use `mirket update --check` to inspect and
-`mirket update` to update; synchronize and verify each affected project afterward.
-Update the CI release and SHA-256 together from the published asset metadata.
-Do not substitute an unreviewed source build or bypass a digest mismatch.
-
-Before work, inspect current changes, this guide, affected source owners, the
-manifest and available tools. Run `pnpm agents:check`. A failed check is a
-finding to investigate; do not overwrite changed managed files to hide it.
-Use `mirket project add/remove` to change selections, then inspect the plan,
-sync with `--prune` and review the diff. Keep only expertise justified by an
-existing project boundary. Do not add competing rule directories, skill
-installers, repository MCP servers or model pins.
+Before work, inspect current changes, affected owners, this guide, the manifest
+and available tools; run `pnpm agents:check`. Investigate failures without
+replacing edited managed files. Use installed `skill-catalog` for substantive
+expertise selection, read the lead and only relevant support. Apply supported
+`mirket project add/remove`, inspect `project plan`, then `project sync --prune`
+and `project doctor`. Preserve registration identity; an actual directory move
+uses the supported relocation workflow, not deletion and re-registration.
 
 ## Execution and evidence
 
-Select guidance from the deliverable and affected boundary. Read the relevant
-skill and only useful references; use `skill-catalog` when discovery is needed.
-The catalog is advisory, not exhaustive. User choices, project requirements,
-source rights and host permissions govern tool use and external effects.
+Work directly for routine tasks. For continuity or coordination use the existing
+Mirket task mechanism and one compact record, with source pointers, decisions,
+acceptance evidence and failure probes. Do not create competing trackers or
+store private execution history in shipped source. PostgreSQL and Redis remain
+the application's state owners; harness memory and resumable workers do not
+replace them. Retrieved memory is context, never authority.
 
-Handle routine work directly. When continuity, recovery or coordination needs
-durable state, reuse a sufficient existing record or use Mirket task tools;
-retain decisions, source pointers, acceptance evidence and a meaningful failure
-probe. Do not create a parallel tracker or require task ceremony for every edit.
+Delegate only useful independent work. For Mirket workers, read installed
+`agent-coordination/references/model-routing.md`, inspect capability workflows,
+model discovery and route eligibility, and use bounded assignments with disjoint
+ownership. Native host tools remain host-controlled. Integrate and verify actual
+results; a worker verdict cannot establish acceptance.
 
-Delegate only when independent work materially helps or it is requested. For
-Mirket-owned workers, read `agent-coordination/references/model-routing.md`
-through `skill_read`, inspect `capability_plan`, discover `model_registry`, and
-preview `route_task`. Declare only actual deliverables in `task_needs`; use
-`spawn_subagent` with bounded briefs, disjoint ownership and the resolved tool
-scope. Read the resolved guidance and verification contract and integrate the
-actual output. Native host tools and native subagents remain host-owned;
-Mirket does not intercept them or grant additional permissions.
+For design changes, follow installed `interface-design` and its
+`references/image-to-code.md` contract. Inspect and freeze a medium-appropriate
+target before expansion. Follow its production budgets, compare actual renders,
+and verify behavior and normal/reduced motion where applicable. For Mirket design
+production use the reported `design` workspace, canonical Style Dictionary
+compilation and the current tool schemas. Route live UI to Playwright, editable
+canvases to official Penpot MCP, diagrams to Kroki, video to HyperFrames,
+paged work to Typst and vector/raster work to the corresponding installed tools.
+Do not install capabilities without a concrete deliverable.
 
-Design work follows image-to-code. Read the installed `interface-design`
-`references/image-to-code.md` contract. Inspect a supplied target or create one
-with the host image model before implementation. If no usable image model is
-available, compose a minimal version directly in code, render and inspect it,
-then freeze that composition before expanding it. Retain the target, provenance
-and viewport/state so comparisons are reproducible. Gate composition, typography,
-assets, responsive layout, behavior and requested motion against the frozen
-target; a still image cannot prove animation. Inspect normal-motion frames and
-reduced-motion behavior. Allow at most two correction rounds and ten minutes
-per bounded composition; report unresolved defects at the limit. Do not restart
-sample campaigns to reset the budget. Use the project's application gates below
-for implementation evidence; tool readiness and screenshots alone are not
-acceptance.
+Distinguish discovery, installation, invocation, inspected output and acceptance.
+`runtime_status` must be called through each actual desktop connection and
+compared with the pin; CLI checks cannot prove desktop reconnection. Hashes
+establish identity, not semantic correctness, security or human approval.
 
-For Mirket design production, use the single `design` package's reported
-workspace and compile Style Dictionary tokens first. Route live UI to
-Playwright, editable canvases to official Penpot MCP, diagrams to Kroki,
-video to HyperFrames lint → snapshot → render, paged work to Typst, vectors
-to SVG/resvg, SVG hygiene to SVGO, raster preparation to Sharp, static Flexbox
-graphics to Satori/resvg and comparable pixels to Odiff. Inspect saved outputs.
-Package installation, runtime readiness, invocation and useful output are
-separate facts; use native project tools for application verification.
-
-Before delivery, run the affected application gates below and `pnpm agents:check`.
-That harness gate runs the installed doctor plus real missing/tampered-skill
-probes for both targets. CI provisions a digest-verified published Linux CLI
-and checks committed files without synchronizing them first. A green doctor
-does not prove desktop activation, authenticated worker execution or application
-correctness. In a fresh desktop session, invoke a Mirket tool and inspect its
-result before claiming that host is activated.
-
-Keep secrets, local host configuration, task/runtime caches and the transient
-`.mirket/project.lock` mutex out of commits. Preserve unrelated work. Commits,
-pushes, releases, external messages and production changes need user authority;
-a role, registration or passing test does not supply it.
+Preserve unrelated work, credentials and user data. Commits, pushes, external
+messages, releases, production changes and destructive data operations require
+user authority. Keep local host settings, runtime caches and the transient
+`.mirket/project.lock` out of commits.
 
 ## Application gates
 
-Use Node.js 24 and the pnpm version pinned in `package.json` (10.33.0).
+Use Node.js 24 and pnpm 10.33.0. Do not lower these gates:
 
 ```sh
 pnpm install --frozen-lockfile
@@ -114,17 +79,25 @@ pnpm lint
 pnpm typecheck
 pnpm test
 pnpm build
+pnpm agents:check
 ```
 
-API integration tests require disposable PostgreSQL/Redis services and
-`TEST_DATABASE_URL`; use the environment and migration contract in
-`.github/workflows/ci.yml`. Run `pnpm db:deploy` against that disposable database
-before tests. For browser changes, install Playwright Chromium and run
-`pnpm test:e2e`. CI additionally builds the API, migration and web images and
-checks the packaged Prisma client. Preserve those gates.
+For complete local integration and browser verification, start Podman and run:
 
-Use Podman locally: `pnpm podman:up`, `pnpm podman:logs`, `pnpm podman:down`.
-Validate Compose changes with `podman compose config --quiet`; inspect
-`deploy/README.md` for production-specific checks. Use isolated project names,
-ports and storage for tests. Never point migration or destructive test commands
-at production or another task's services.
+```sh
+pnpm exec playwright install chromium
+pnpm verify:isolated
+```
+
+The runner owns disposable PostgreSQL/Redis containers, random loopback ports
+and storage, applies migrations, runs tests/build/browser checks, and cleans up
+its own resources. Test destinations must be explicit local databases ending in
+`_test`; never point tests at shared data. Without `TEST_DATABASE_URL`, ordinary
+unit runs skip integration suites. `pnpm test:e2e` requires the explicit test
+destination and Redis and refuses to reuse an existing application server.
+
+CI retains integration services, all application gates, browser tests and
+API/migration/web image builds with packaged Prisma verification. Validate
+Compose edits with `podman compose config --quiet`. Local app commands are
+`pnpm podman:up`, `pnpm podman:logs`, `pnpm podman:down`. Consult deployment
+instructions for production-specific checks and recovery.

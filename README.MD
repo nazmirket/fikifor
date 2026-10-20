@@ -106,12 +106,20 @@ Database integration tests require a **disposable, migrated test database** and
 database integration suites are skipped. See
 [the CI workflow](.github/workflows/ci.yml) for the complete test environment.
 
-For browser tests, build the applications first, install Chromium, and run:
+For complete local verification with disposable PostgreSQL and Redis, start
+Podman, install Chromium, and run:
 
 ```sh
 pnpm exec playwright install chromium
-pnpm test:e2e
+pnpm verify:isolated
 ```
+
+This applies migrations, runs tests and builds, then exercises the browser journey.
+It allocates its own containers and loopback ports and removes its containers and
+volumes afterward. It does not reuse development servers. For manually provisioned
+tests, set `TEST_DATABASE_URL` to a local disposable database ending in `_test` and
+set `REDIS_URL` explicitly; browser fixtures and servers use that same database.
+A test database name is a guardrail, not proof that a database is disposable.
 
 CI runs lint, type checks, tests, builds, browser tests, and API/migration/web
 container builds. Validate Compose changes with `podman compose config --quiet`.
@@ -140,3 +148,6 @@ relevant environment details when reporting a problem.
 For agent-assisted development, [AGENTS.md](AGENTS.md) documents the Mirket
 workflow for Codex Desktop and Claude Desktop Code. Run `pnpm agents:check`
 alongside the applicable application checks.
+
+Release provenance, per-client activation and troubleshooting are described in
+[the harness guide](docs/harness.md).

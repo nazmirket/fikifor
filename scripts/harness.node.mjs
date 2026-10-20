@@ -1,7 +1,10 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { createHash } from 'node:crypto'
 import {
 	appendFileSync,
+	accessSync,
+	constants,
 	cpSync,
 	mkdtempSync,
 	mkdirSync,
@@ -9,9 +12,10 @@ import {
 	rmSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { delimiter, join } from 'node:path'
 import { fileURLToPath, URL } from 'node:url'
 import test from 'node:test'
+import { verifyHarnessIdentity } from './harness-identity.mjs'
 
 const root = fileURLToPath(new URL('../', import.meta.url))
 const read = path => readFileSync(join(root, path), 'utf8')
@@ -75,16 +79,85 @@ for (const target of ['.agents', '.claude']) {
 	}
 }
 
-test('the installed harness matches the reviewed CI release', () => {
-	const version = read('.github/workflows/harness.yml').match(
-		/MIRKET_RELEASE: mirket-v(\d+\.\d+\.\d+)/,
-	)?.[1]
-	assert.ok(version, 'the published release pin is required')
-	const runtime = spawnSync('mirket', ['--version'], { encoding: 'utf8' })
+const pin = JSON.parse(read('scripts/mirket-release.json'))
+
+test('a clean CI home verifies a standalone release without claiming desktop activation', () => {
+	const home = mkdtempSync(join(tmpdir(), 'mirket-ci-home-'))
+	try {
+		const runtime = spawnSync('mirket', ['--home', home, 'info', '--json'], {
+			encoding: 'utf8',
+		})
+		assert.equal(runtime.status, 0, runtime.stderr)
+		const identity = JSON.parse(runtime.stdout)
+		assert.equal(identity.installed_binary.sha256, null)
+		verifyHarnessIdentity(identity, pin, { requireInstalled: false })
+		assert.throws(() => verifyHarnessIdentity(identity, pin))
+	} finally {
+		rmSync(home, { recursive: true, force: true })
+	}
+})
+
+test('the installed harness matches the published bytes, source and catalog', () => {
+	const executable = (process.env.PATH ?? '')
+		.split(delimiter)
+		.map(directory =>
+			join(directory, process.platform === 'win32' ? 'mirket.exe' : 'mirket'),
+		)
+		.find(path => {
+			try {
+				accessSync(path, constants.X_OK)
+				return true
+			} catch {
+				return false
+			}
+		})
+	assert.ok(executable, 'Mirket executable must be available on PATH')
+	const runtime = spawnSync(executable, ['info', '--json'], { encoding: 'utf8' })
 	assert.equal(runtime.status, 0, runtime.stderr)
+	const identity = JSON.parse(runtime.stdout)
+	verifyHarnessIdentity(identity, pin, { requireInstalled: false })
 	assert.equal(
-		runtime.stdout.trim(),
-		`mirket ${version}`,
-		'Run mirket update and synchronize the project before continuing',
+		createHash('sha256').update(readFileSync(executable)).digest('hex'),
+		identity.process.executable_sha256,
+		'Terminal executable bytes must match the reported process',
 	)
+	if (identity.installed_binary.sha256 !== null) {
+		assert.equal(
+			createHash('sha256')
+				.update(readFileSync(identity.installed_binary.path))
+				.digest('hex'),
+			identity.installed_binary.sha256,
+			'Installed file bytes must match the reported identity',
+		)
+	}
+})
+
+test('a same-version replacement, stale source/catalog or process fails verification', () => {
+	const asset = pin.assets[0]
+	const identity = {
+		process: {
+			version: pin.version,
+			target: asset.target,
+			executable_sha256: asset.sha256,
+			source_sha256: pin.source_sha256,
+		},
+		catalog: { sha256: pin.catalog_sha256 },
+		installed_binary: { matches_process: true, sha256: asset.sha256 },
+	}
+	verifyHarnessIdentity(identity, pin)
+	const standalone = structuredClone(identity)
+	standalone.installed_binary = { sha256: null, matches_process: null }
+	assert.throws(() => verifyHarnessIdentity(standalone, pin))
+	verifyHarnessIdentity(standalone, pin, { requireInstalled: false })
+	for (const [section, field, value] of [
+		['process', 'executable_sha256', '0'.repeat(64)],
+		['process', 'source_sha256', '0'.repeat(64)],
+		['catalog', 'sha256', '0'.repeat(64)],
+		['installed_binary', 'sha256', '0'.repeat(64)],
+		['installed_binary', 'matches_process', false],
+	]) {
+		const changed = structuredClone(identity)
+		changed[section][field] = value
+		assert.throws(() => verifyHarnessIdentity(changed, pin))
+	}
 })
