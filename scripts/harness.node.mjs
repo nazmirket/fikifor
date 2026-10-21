@@ -81,6 +81,26 @@ for (const target of ['.agents', '.claude']) {
 
 const pin = JSON.parse(read('scripts/mirket-release.json'))
 
+test('pinned assets belong to one official release', () => {
+	assert.equal(pin.release, `mirket-v${pin.version}`)
+	assert.match(pin.release_manifest_sha256, /^[0-9a-f]{64}$/)
+	assert.equal(new Set(pin.assets.map(asset => asset.target)).size, pin.assets.length)
+	for (const asset of pin.assets) {
+		assert.equal(
+			new URL(asset.url).origin,
+			'https://github.com',
+			'asset must come from the official release host',
+		)
+		assert.ok(
+			asset.url.startsWith(
+				`https://github.com/codemirket/harness/releases/download/${pin.release}/mirket-`,
+			),
+			'asset URL must use the pinned repository and tag',
+		)
+		assert.match(asset.sha256, /^[0-9a-f]{64}$/)
+	}
+})
+
 test('a clean CI home verifies a standalone release without claiming desktop activation', () => {
 	const home = mkdtempSync(join(tmpdir(), 'mirket-ci-home-'))
 	try {

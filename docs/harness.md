@@ -1,124 +1,104 @@
 # Mirket adoption and maintenance
 
-Fikifor adopts [Mirket 1.0.11](https://github.com/codemirket/harness/releases/tag/mirket-v1.0.11),
-published 2026-10-20T07:01:43Z. `scripts/mirket-release.json` is the release
-identity owner: public asset URLs and SHA-256 values, release metadata digest,
-and source/catalog fingerprints reported by the digest-verified public binary.
-The source fingerprint is embedded build identity, not an independent source audit.
-CI downloads the pinned Linux asset and verifies its bytes before executing it.
-The local harness gate checks platform bytes, source, catalog and process match,
-then exercises both hosts' real missing/tampered-skill rejection.
-It also checks a clean CI home: a standalone CLI can verify release identity
-without a desktop installation. This never establishes desktop activation;
-connected-client verification still requires the installed-process match.
+Fikifor uses [Mirket 0.0.1](https://github.com/codemirket/harness/releases/tag/mirket-v0.0.1),
+published 2026-10-21T14:34:24Z. This is a fresh baseline: registrations,
+Mem0 facts and worker checkpoints from earlier releases are not imported.
+`scripts/mirket-release.json` records the official release manifest digest,
+platform asset digests, and source/catalog fingerprints reported by the verified
+binary. Hashes establish transfer identity, not publisher authentication or
+application correctness.
 
-## Remaining activation gap
+## Owners
 
-As of 2026-10-20, the actual Codex connection was verified against the release
-pin. **Claude Desktop's live Mirket connection has not been observed.** Its
-configured executable matches the release, but that does not prove that the
-running desktop session uses it. Complete adoption remains pending this check;
-passing CI does not close the gap.
+| Surface                              | Owner                                                                                                                      |
+| ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------- |
+| Fikifor boundaries and quality gates | `AGENTS.md`                                                                                                                |
+| Claude entry                         | `CLAUDE.md`, which imports `AGENTS.md`                                                                                     |
+| Shared selection                     | `.mirket/project.json`: `project-foundation` plus web, API, database, infrastructure, cross-service and search specialists |
+| Managed guidance                     | `.agents/skills/` and `.claude/skills/`, maintained by Mirket CLI                                                          |
+| Application behavior and deployment  | `apps/`, `packages/`, `README.MD` and `deploy/README.md`                                                                   |
+| Harness gate                         | `pnpm agents:check`, backed by `.github/workflows/harness.yml`                                                             |
+| Integration and browser gate         | `.github/workflows/ci.yml` and `pnpm verify:isolated`                                                                      |
 
-In the intended Claude Desktop session, invoke Mirket `runtime_status` and
-compare its executable, source and catalog fingerprints with
-`scripts/mirket-release.json`. Require `installed_binary.matches_process: true`;
-if stale, reconnect/restart that client's Mirket connection and repeat. Retain
-the observation in the existing migration record before marking adoption complete.
+`project-foundation` supplies architecture review, debugging, test design and
+release operations. The six specialists match present owners: Nuxt, Express and
+Socket.IO, Prisma/PostgreSQL/Redis, Podman/deployment, cross-service contracts,
+and public sitemap/robots behavior. Read only guidance relevant to the task.
+There is no project-owned MCP launcher or second agent framework. Host MCP
+configuration stays with the desktop clients; Mirket-owned runtime data stays
+under `~/.mirket`, not in this repository.
 
-## Onboarding
+## Install and select
 
-Install the platform CLI from the pinned public release using Mirket's supported
-installation procedure. Check its asset digest against the pin, then run:
+Follow the [official fresh-install guide](https://github.com/codemirket/harness/blob/main/docs/agent-installation.md).
+Verify the chosen 0.0.1 asset against the release manifest before execution.
+The managed executable is `~/.mirket/bin/mirket`; setup owns installed skills
+and host MCP definitions. The supported targets here are Codex and Claude.
+Preserve existing optional package selections when repeating setup.
+
+Inspect all pages of `mirket project list --json` before registration. For a new
+project without `.mirket/project.json`, run:
 
 ```sh
-mirket info --json
-mirket setup --target all --yes
 mirket project init --project "$PWD" --target all
+mirket project add --project "$PWD" --profile project-foundation
+for skill in infrastructure-engineering frontend-engineering backend-engineering \
+  database-systems technical-leadership search-visibility; do
+  mirket project add --project "$PWD" --skill "$skill"
+done
+```
+
+A checkout already containing this manifest needs
+`mirket project register --project "$PWD"` instead. Never reuse a pre-0.0.1
+project identity.
+
+After a selection change, run:
+
+```sh
 mirket project plan --project "$PWD"
-mirket project sync --project "$PWD" --prune
+mirket project sync --project "$PWD"
 mirket project doctor --project "$PWD"
 pnpm agents:check
 ```
 
-Existing registrations must be reused. Inspect `mirket project list --json` and
-follow pagination before registering. Do not copy a registration or erase task
-history to disguise relocation; inspect `mirket project relocate --help` for an
-actual rename of the original directory.
+Inspect the plan and exact file contents before resolving a conflict. Use
+`--prune` only after confirming the removed managed copies have no remaining
+selection or unique project rule. Keep `.mirket/project.lock` out of commits.
 
-The manifest keeps `project-foundation` and six specialists: frontend, backend,
-database, infrastructure, technical leadership and search visibility. Each maps
-to a present product boundary. Global skills supply shared methods. Select the
-lead per task rather than loading every installed skill.
+## Verify the actual boundary
 
-## Upgrade and verify
+Run `mirket doctor --json` and `mirket info --json` on the managed executable.
+In each available desktop client, invoke its Mirket `catalog_search`, read a
+relevant embedded skill, then call `runtime_status`. Compare the live process
+version, target, executable, source and catalog fingerprints with the pin and
+CLI info. Require `installed_binary.matches_process: true`. A CLI doctor or CI
+run cannot prove a desktop connection has reloaded. Record Codex and Claude
+observations separately; a missing client remains unverified.
 
-```sh
-mirket update --check --json
-# Only if the chosen public release differs from installed content:
-mirket update --json
-mirket info --json
-mirket doctor --json
-mirket catalog check
-mirket project plan --project "$PWD"
-mirket project sync --project "$PWD" --prune
-mirket project doctor --project "$PWD"
-```
+CI downloads the pinned Linux executable, verifies its bytes, runs
+`pnpm agents:check` and exercises both hosts' missing/modified managed-skill
+failure probes. Its clean temporary Mirket home checks standalone identity
+without claiming desktop activation. The application CI keeps database, unit,
+build, browser, migration and image checks. Do not reduce these gates to make a
+harness migration pass.
 
-Resolve stable, non-draft releases by publication time from the official release
-listing. Verify the release metadata digest and target asset SHA-256. Review
-and update the single pin only after provenance is verified. Never accept a
-matching version string in place of matching content. Review synchronization
-changes and preserve any locally edited managed guidance instead of overwriting
-it to make the doctor pass.
+The selected `agent-runtime` and `design` packages are optional host capabilities,
+not product dependencies. For recurring project work, use focused Mem0 recall
+and retain only verified stable facts with provenance and supersession. Mirket
+workers use LangGraph checkpoints; native host sessions have their own lifecycle.
+After interruption, inspect `workflow_status` before resuming a worker. Do not
+copy old state or replay an uncertain effect.
 
-In **each desktop client**, call the connected Mirket `runtime_status`. Compare
-`process.version`, `process.target`, `process.executable_sha256`,
-`process.source_sha256` and `catalog.sha256` with the pin, and require
-`installed_binary.matches_process: true`. Also check the terminal executable
-and the executable referenced in client configuration. `mirket doctor` starts a
-separate check process; it cannot attest to an already running desktop session.
-After a stale process is found, reconnect/restart that client's MCP connection
-and repeat the call. Verification in Codex does not verify Claude.
+For a concrete visual deliverable, use the installed `interface-design` guidance.
+Freeze a target, compile Style Dictionary tokens before rendering, and inspect
+saved output. Use browser inspection for live UI, OpenPencil for compatible
+editable `.fig`/`.pen` files, Kroki for diagrams with Excalidraw explicitly
+selected when needed, Typst for paged work, SVG/resvg for vectors and Sharp for
+raster work. The existing `apps/web/public/brand.pxd` is a different ZIP-based
+project asset; preserve it rather than treating it as an OpenPencil file.
+`brand.svg` embeds a PNG, so choose a renderer compatible with that content.
+Design package readiness alone does not prove a useful project-scoped artifact.
 
-## Package and design boundaries
-
-Inspect `mirket package status`, `package show` and current help before using a
-package. `package probe design --schemas --json` verifies initialization and
-filtered discovery only. Invoke a relevant tool and inspect its saved output
-before claiming successful production. Runtime identity returned by the actual
-design call must match the installed recipe/modules. Penpot is a separate live
-service; its disabled state does not imply editable-canvas readiness.
-
-For a concrete design deliverable use installed `interface-design` guidance,
-freeze its target, compile canonical tokens through Style Dictionary and verify
-the actual application with Playwright. The current Vue/Tailwind source and
-brand assets remain authoritative; this migration adds no second token system,
-editor document or media pipeline. Paged, video and editable-canvas workflows
-are selected only when those artifacts are requested.
-
-The existing `brand.svg` contains an embedded PNG. The design package's vector
-renderer rejects embedded image references; do not strip that image to force a
-pass. Preserve the asset and choose a compatible raster/browser workflow for
-inspection, or migrate the artwork explicitly when a vector deliverable is needed.
-
-Mem0/LangGraph are optional harness capabilities, not application dependencies.
-Fikifor's PostgreSQL/Redis and existing Mirket task records already own durable
-product state and migration continuity. Do not duplicate them in memory. When
-memory/workers are needed, preserve project isolation and inspect the selected
-runtime, recovery and retention contracts first.
-
-## Recovery and handoff
-
-If an upgrade fails, retain the pin, original managed changes and error evidence.
-Use supported CLI diagnostics/update/setup; do not manually replace managed
-copies or invent a fallback installer. Review the previous Git diff before
-reverting project-owned changes. Recheck actual client identity after recovery.
-Application recovery is documented in `deploy/README.md`; a harness update
-never authorizes production migrations or data restoration.
-
-Keep task execution logs and activation observations in the existing Mirket task
-record and ignored local evidence, not this guide. A handoff must identify the
-revision, commands, failures, isolated destinations, actual client connection,
-and any unverified platform or production path. Leave incomplete tasks open
-when a required client cannot be observed.
+Keep historical observations labeled as historical. A failed setup or drift
+check calls for supported Mirket diagnostics and inspection of the original
+files. Application recovery remains in `deploy/README.md`.
