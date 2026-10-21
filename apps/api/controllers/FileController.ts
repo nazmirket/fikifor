@@ -1,3 +1,5 @@
+import { basename, dirname } from 'node:path'
+
 import ApiReq from 'ApiReq'
 import ApiRes from 'ApiRes'
 
@@ -16,5 +18,6 @@ export const access = AsyncMd(async (req: ApiReq, res: ApiRes) => {
 		'Cache-Control',
 		isPublic ? 'public, max-age=86400, immutable' : 'private, max-age=86400, immutable',
 	)
-	res.status(200).sendFile(optimizedPath)
+	// Absolute paths in hidden worktrees trip sendFile's dotfile guard.
+	res.status(200).sendFile(basename(optimizedPath), { root: dirname(optimizedPath) })
 })
