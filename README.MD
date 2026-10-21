@@ -147,7 +147,10 @@ relevant environment details when reporting a problem.
 
 For agent-assisted development, [AGENTS.md](AGENTS.md) documents the Mirket
 workflow for Codex Desktop and Claude Desktop Code. Run `pnpm agents:check`
-alongside the applicable application checks.
+alongside the applicable application checks. After installation changes or a
+task/memory failure, run `pnpm agents:runtime` for local registration readiness
+and invoke `runtime_status` in each actual desktop connection. These checks
+cover different boundaries; CI success alone does not establish live adoption.
 
 Release provenance, per-client activation and troubleshooting are described in
 [the harness guide](docs/harness.md).

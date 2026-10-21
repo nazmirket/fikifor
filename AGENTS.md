@@ -37,6 +37,10 @@ supported `project add/remove`, inspect `project plan`, then run `project sync`
 and `project doctor`. Use supported relocation only for a real move of the same
 registered directory. Do not import pre-0.0.1 identities.
 
+After installation changes or a task/memory failure, run `pnpm agents:runtime`
+for local CLI identity and project access, then inspect `runtime_status` in each
+actual desktop connection. These checks establish different facts.
+
 ## Execution and evidence
 
 Work directly for routine tasks. For continuity or coordination use one existing

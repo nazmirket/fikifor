@@ -181,3 +181,23 @@ test('a same-version replacement, stale source/catalog or process fails verifica
 		assert.throws(() => verifyHarnessIdentity(changed, pin))
 	}
 })
+
+test('local readiness reports a missing CLI without claiming success', () => {
+	const emptyPath = mkdtempSync(join(tmpdir(), 'mirket-unavailable-'))
+	try {
+		const result = spawnSync(
+			process.execPath,
+			[join(root, 'scripts/harness-runtime.mjs')],
+			{
+				cwd: root,
+				env: { ...process.env, PATH: emptyPath },
+				encoding: 'utf8',
+			},
+		)
+		assert.equal(result.status, 1)
+		assert.match(result.stderr, /Mirket CLI unavailable on PATH/)
+		assert.doesNotMatch(result.stdout, /matches|passed/)
+	} finally {
+		rmSync(emptyPath, { recursive: true, force: true })
+	}
+})

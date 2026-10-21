@@ -25,7 +25,8 @@
 		"podman:up": "podman compose up -d --build",
 		"podman:down": "podman compose down",
 		"podman:logs": "podman compose logs -f",
-		"agents:check": "mirket project doctor --project . && node --test scripts/harness.node.mjs"
+		"agents:check": "mirket project doctor --project . && node --test scripts/harness.node.mjs",
+		"agents:runtime": "node scripts/harness-runtime.mjs"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

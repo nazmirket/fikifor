@@ -18,6 +18,7 @@ application correctness.
 | Managed guidance                     | `.agents/skills/` and `.claude/skills/`, maintained by Mirket CLI                                                          |
 | Application behavior and deployment  | `apps/`, `packages/`, `README.MD` and `deploy/README.md`                                                                   |
 | Harness gate                         | `pnpm agents:check`, backed by `.github/workflows/harness.yml`                                                             |
+| Local runtime readiness              | `pnpm agents:runtime`: installed CLI identity and registered project access                                                |
 | Integration and browser gate         | `.github/workflows/ci.yml` and `pnpm verify:isolated`                                                                      |
 
 `project-foundation` supplies architecture review, debugging, test design and
@@ -68,6 +69,10 @@ selection or unique project rule. Keep `.mirket/project.lock` out of commits.
 ## Verify the actual boundary
 
 Run `mirket doctor --json` and `mirket info --json` on the managed executable.
+Run `pnpm agents:runtime` after installation changes or task/memory failures to
+check local identity and registered project access. It can optionally compare a
+saved `runtime_status` JSON response with the pin using `--connection FILE`;
+that file is not a live connection check.
 In each available desktop client, invoke its Mirket `catalog_search`, read a
 relevant embedded skill, then call `runtime_status`. Compare the live process
 version, target, executable, source and catalog fingerprints with the pin and
