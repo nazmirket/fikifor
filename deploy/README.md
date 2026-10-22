@@ -1,18 +1,18 @@
-# Fikifor Podman deployment
+# Fikifor Compose deployment
 
 The root `docker-compose.yml` builds and starts the complete stack locally with
-Podman. This
-directory contains the production deployment contract, which runs prebuilt API
-and web images without a process manager.
+Podman. This directory contains the production deployment contract for Docker or
+Podman, which runs prebuilt API and web images without a process manager.
 
 ## Build images
 
 From the repository root:
 
 ```bash
-podman build --file apps/api/Dockerfile --tag fikifor-api:latest .
-podman build --file apps/api/Dockerfile --target migration --tag fikifor-api-migrate:latest .
-podman build --file apps/web/Dockerfile --tag fikifor-web:latest .
+CONTAINER_ENGINE=docker # Use podman where configured.
+"$CONTAINER_ENGINE" build --file apps/api/Dockerfile --tag fikifor-api:latest .
+"$CONTAINER_ENGINE" build --file apps/api/Dockerfile --target migration --tag fikifor-api-migrate:latest .
+"$CONTAINER_ENGINE" build --file apps/web/Dockerfile --tag fikifor-web:latest .
 ```
 
 For production deployments, push the application images and set
@@ -33,14 +33,16 @@ Prisma client is copied into that isolated tree and checked by CI.
 cp deploy/.env.example deploy/.env
 # Set all five image digests and replace every secret and origin placeholder.
 
-pnpm deploy:check
-podman compose --env-file deploy/.env --file deploy/compose.yml up -d
-podman compose --env-file deploy/.env --file deploy/compose.yml ps
+CONTAINER_ENGINE=docker # Use podman where configured.
+sh scripts/check-deploy-images.sh deploy/.env
+"$CONTAINER_ENGINE" compose --env-file deploy/.env --file deploy/compose.yml up -d
+"$CONTAINER_ENGINE" compose --env-file deploy/.env --file deploy/compose.yml ps
 ```
 
 The preflight command validates the resolved Compose configuration and rejects
 image tags without a SHA-256 digest. Run it before each deployment; it requires
-Node.js 24, pnpm, and Podman on the deployment host.
+only a POSIX shell and Docker or Podman on the deployment host. Set
+`CONTAINER_ENGINE` explicitly when both engines are installed.
 
 The deployment runs six services:
 
@@ -52,7 +54,7 @@ The deployment runs six services:
 - the Nuxt web application
 
 API and Socket.IO intentionally use separate containers and direct Node
-processes. Podman owns restart policy, health checks, logs, and process
+processes. The container engine owns restart policy, health checks, logs, and process
 lifecycle; no in-container process manager is used.
 
 Set `CORS_ORIGINS` to a comma-separated list of browser origins. Keep
@@ -70,7 +72,7 @@ switching an existing database to `prisma migrate deploy`, take a verified
 backup and baseline the migration once:
 
 ```bash
-podman compose --env-file deploy/.env --file deploy/compose.yml run --rm \
+"$CONTAINER_ENGINE" compose --env-file deploy/.env --file deploy/compose.yml run --rm \
   migrate /app/node_modules/.bin/prisma migrate resolve \
   --applied 20260729000000_initial
 ```

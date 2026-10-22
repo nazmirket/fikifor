@@ -22,7 +22,7 @@
 		"db:build": "pnpm --filter @fikifor/api db:build",
 		"db:migrate": "pnpm --filter @fikifor/api db:migrate",
 		"db:deploy": "pnpm --filter @fikifor/api db:deploy",
-		"deploy:check": "node scripts/check-deploy-images.mjs",
+		"deploy:check": "sh scripts/check-deploy-images.sh",
 		"podman:up": "podman compose up -d --build",
 		"podman:down": "podman compose down",
 		"podman:logs": "podman compose logs -f",
