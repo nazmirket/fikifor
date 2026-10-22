@@ -81,9 +81,12 @@ const props = defineProps({
 	},
 })
 
-const isVoted = computed(() =>
-	props.votes?.some(v => v.participant?.user?.id === authStore.user.userId),
-)
+const isVoted = computed(() => {
+	const userId = authStore.user?.userId
+	return (
+		userId !== undefined && props.votes?.some(v => v.participant?.user?.id === userId)
+	)
+})
 
 const emit = defineEmits(['vote'])
 </script>

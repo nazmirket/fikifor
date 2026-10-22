@@ -18,6 +18,7 @@ export const useSessionStore = defineStore('session', () => {
 	const counter = ref<number>()
 	const phase = ref<GamePhase>('lobby')
 	let countdownTimer: ReturnType<typeof setInterval> | undefined
+	let snapshotRequest = 0
 
 	const participation = computed<Participant | undefined>(() => {
 		const userId = useAuthStore().user?.userId
@@ -27,9 +28,12 @@ export const useSessionStore = defineStore('session', () => {
 	})
 
 	async function getSession(code: string) {
+		const request = ++snapshotRequest
+		const token = useAuthStore().token
 		const response = await useApi<SessionSnapshot>(`/sessions/${code}`, {
 			method: 'GET',
 		})
+		if (request !== snapshotRequest || token !== useAuthStore().token) return
 		if (!response.success) throw apiError(response.error)
 
 		session.value = response.data.session
@@ -70,6 +74,16 @@ export const useSessionStore = defineStore('session', () => {
 		countdownTimer = undefined
 	}
 
+	function reset() {
+		++snapshotRequest
+		stopCountdown()
+		session.value = null
+		match.value = null
+		final.value = null
+		counter.value = undefined
+		phase.value = 'lobby'
+	}
+
 	async function over() {
 		const code = session.value?.code
 		if (!code) return
@@ -88,6 +102,7 @@ export const useSessionStore = defineStore('session', () => {
 		match,
 		over,
 		getSession,
+		reset,
 		participation,
 	}
 })

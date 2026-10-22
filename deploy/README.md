@@ -15,8 +15,11 @@ podman build --file apps/api/Dockerfile --target migration --tag fikifor-api-mig
 podman build --file apps/web/Dockerfile --tag fikifor-web:latest .
 ```
 
-For remote deployments, push immutable version tags or digest-pinned images and
-set `FIKIFOR_API_IMAGE`, `FIKIFOR_MIGRATE_IMAGE`, and `FIKIFOR_WEB_IMAGE` accordingly.
+For production deployments, push the application images and set
+`FIKIFOR_API_IMAGE`, `FIKIFOR_MIGRATE_IMAGE`, and `FIKIFOR_WEB_IMAGE` to
+digest-pinned references. Set `POSTGRES_IMAGE` and `REDIS_IMAGE` to reviewed
+digest-pinned upstream images as well. The example environment leaves all five
+image values blank so configuration validation fails until each is set.
 
 The API image uses pnpm's current workspace deployment with injected workspace
 packages. `syncInjectedDepsAfterScripts: [build]` refreshes the compiled contracts
@@ -28,12 +31,16 @@ Prisma client is copied into that isolated tree and checked by CI.
 
 ```bash
 cp deploy/.env.example deploy/.env
-# Replace every placeholder in deploy/.env.
+# Set all five image digests and replace every secret and origin placeholder.
 
-podman compose --env-file deploy/.env --file deploy/compose.yml config --quiet
+pnpm deploy:check
 podman compose --env-file deploy/.env --file deploy/compose.yml up -d
 podman compose --env-file deploy/.env --file deploy/compose.yml ps
 ```
+
+The preflight command validates the resolved Compose configuration and rejects
+image tags without a SHA-256 digest. Run it before each deployment; it requires
+Node.js 24, pnpm, and Podman on the deployment host.
 
 The deployment runs six services:
 

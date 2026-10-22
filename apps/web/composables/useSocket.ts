@@ -27,6 +27,19 @@ function clearTransition() {
 	pendingTransition = undefined
 }
 
+function disconnectCurrentSocket() {
+	socket.value?.disconnect()
+	joinedConnection = undefined
+	joinedCode = undefined
+	clearTransition()
+}
+
+export function resetRealtimeSession() {
+	disconnectCurrentSocket()
+	if (socket.value) socket.value.auth = { token: null }
+	useSessionStore().reset()
+}
+
 function scheduleTransition(key: string, work: () => void) {
 	if (pendingTransition === key) return
 	clearTransition()
@@ -52,8 +65,10 @@ export function joinCurrentSession() {
 export default function (): FikiforSocket {
 	const authStore = useAuthStore()
 	if (socket.value) {
+		const previousToken = (socket.value.auth as { token?: string | null }).token
+		if (previousToken !== authStore.token) disconnectCurrentSocket()
 		socket.value.auth = { token: authStore.token }
-		if (!socket.value.connected) socket.value.connect()
+		if (authStore.token && !socket.value.connected) socket.value.connect()
 		return socket.value
 	}
 
@@ -176,6 +191,6 @@ export default function (): FikiforSocket {
 		useToast().add({ title: 'Error', description: error.message })
 	})
 
-	socket.value.connect()
+	if (authStore.token) socket.value.connect()
 	return socket.value
 }

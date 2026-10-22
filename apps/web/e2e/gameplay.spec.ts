@@ -119,3 +119,51 @@ test('restores countdown after reload and completes the winner animation', async
 	await page.screenshot({ path: testInfo.outputPath('winner.png'), fullPage: true })
 	expect(errors).toEqual([])
 })
+
+test('closes the authenticated socket on logout before another account logs in', async ({
+	page,
+	request,
+}) => {
+	const otherUsername = `other${randomUUID().replaceAll('-', '').slice(0, 10)}`
+	const signup = await request.post(`${process.env.E2E_API_URL}/api/v1/auth/signup`, {
+		data: {
+			username: otherUsername,
+			password,
+			passwordConfirmation: password,
+		},
+	})
+	expect(signup.ok()).toBe(true)
+	const otherUserId = (await signup.json()).data.user.userId as number
+
+	try {
+		await page.goto('/login')
+		await page.getByRole('textbox', { name: 'Kullanıcı adı' }).fill(username)
+		await page.getByLabel('Parola', { exact: true }).fill(password)
+		const firstSocketPromise = page.waitForEvent('websocket', {
+			predicate: socket => socket.url().includes('/socket.io/'),
+		})
+		await page.getByRole('button', { name: 'Giriş yap', exact: true }).click()
+		const firstSocket = await firstSocketPromise
+		await expect(page).toHaveURL('/')
+
+		let firstSocketClosed = false
+		firstSocket.on('close', () => {
+			firstSocketClosed = true
+		})
+		await page.locator('header button').filter({ hasText: username }).click()
+		await page.getByRole('button', { name: 'Çıkış Yap' }).click()
+		await expect.poll(() => firstSocketClosed).toBe(true)
+
+		await page.getByRole('link', { name: 'Giriş Yap' }).click()
+		await page.getByRole('textbox', { name: 'Kullanıcı adı' }).fill(otherUsername)
+		await page.getByLabel('Parola', { exact: true }).fill(password)
+		const secondSocketPromise = page.waitForEvent('websocket', {
+			predicate: socket => socket.url().includes('/socket.io/'),
+		})
+		await page.getByRole('button', { name: 'Giriş yap', exact: true }).click()
+		await secondSocketPromise
+		await expect(page).toHaveURL('/')
+	} finally {
+		await prisma.user.delete({ where: { id: otherUserId } })
+	}
+})

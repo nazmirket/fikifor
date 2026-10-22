@@ -24,7 +24,7 @@ x-api-environment: &api-environment
   DATABASE_URL: postgresql://${DB_USER:?Set DB_USER}:${DB_PASSWORD:?Set DB_PASSWORD}@postgres:5432/${DB_NAME:-fikifor}
 
 x-api-service: &api-service
-  image: ${FIKIFOR_API_IMAGE:?Set FIKIFOR_API_IMAGE}
+  image: ${FIKIFOR_API_IMAGE:?Set FIKIFOR_API_IMAGE to a pinned image digest}
   environment: *api-environment
   logging: *default-logging
   networks:
@@ -32,7 +32,7 @@ x-api-service: &api-service
     - data
 
 x-migrate-service: &migrate-service
-  image: ${FIKIFOR_MIGRATE_IMAGE:?Set FIKIFOR_MIGRATE_IMAGE}
+  image: ${FIKIFOR_MIGRATE_IMAGE:?Set FIKIFOR_MIGRATE_IMAGE to a pinned image digest}
   environment: *api-environment
   logging: *default-logging
   networks:
@@ -41,7 +41,7 @@ x-migrate-service: &migrate-service
 
 services:
   postgres:
-    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    image: ${POSTGRES_IMAGE:?Set POSTGRES_IMAGE to a pinned image digest}
     restart: unless-stopped
     logging: *default-logging
     environment:
@@ -60,7 +60,7 @@ services:
       - data
 
   redis:
-    image: ${REDIS_IMAGE:-redis:7-alpine}
+    image: ${REDIS_IMAGE:?Set REDIS_IMAGE to a pinned image digest}
     restart: unless-stopped
     logging: *default-logging
     command: ['redis-server', '--save', '', '--appendonly', 'no']
@@ -130,7 +130,7 @@ services:
       start_period: 20s
 
   web:
-    image: ${FIKIFOR_WEB_IMAGE:?Set FIKIFOR_WEB_IMAGE}
+    image: ${FIKIFOR_WEB_IMAGE:?Set FIKIFOR_WEB_IMAGE to a pinned image digest}
     restart: unless-stopped
     logging: *default-logging
     environment:

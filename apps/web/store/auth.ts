@@ -1,6 +1,8 @@
 import type { AuthResult, LoginInput, SignupInput } from '@fikifor/contracts'
 import { defineStore } from 'pinia'
 
+import { resetRealtimeSession } from '~/composables/useSocket'
+
 export const useAuthStore = defineStore(
 	'auth',
 	() => {
@@ -31,6 +33,7 @@ export const useAuthStore = defineStore(
 				body: payload,
 			})
 			if (!response.success) throw apiError(response.error)
+			resetRealtimeSession()
 			token.value = response.data.token
 			user.value = response.data.user
 		}
@@ -41,11 +44,13 @@ export const useAuthStore = defineStore(
 				body: payload,
 			})
 			if (!response.success) throw apiError(response.error)
+			resetRealtimeSession()
 			token.value = response.data.token
 			user.value = response.data.user
 		}
 
 		function logout() {
+			resetRealtimeSession()
 			token.value = null
 			user.value = null
 		}
