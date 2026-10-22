@@ -9,7 +9,7 @@ integration dependencies. Deployment and persistent data belong to
 
 ## Harness ownership
 
-Mirket 0.0.1 supplies shared guidance and, when useful, project-scoped tasks and
+Mirket 0.0.2 supplies shared guidance and, when useful, project-scoped tasks and
 workers. This file owns Fikifor-specific rules; `CLAUDE.md` imports it.
 `.mirket/project.json` selects the same
 expertise for Codex Desktop and Claude Desktop Code. Maintain `.agents/skills/`
@@ -62,7 +62,9 @@ For design changes, follow installed `interface-design` and its
 target before expansion. Follow its production budgets, compare actual renders,
 and verify behavior and normal/reduced motion where applicable. For Mirket design
 production use the reported `design` workspace, compile Style Dictionary tokens
-before rendering, and inspect saved outputs. Route live UI to browser inspection,
+before dependent production, reference them in authored source, and inspect saved
+outputs. Observation-only captures and saved-file exports need no token injection.
+Route live UI to browser inspection,
 editable design files to OpenPencil, diagrams to Kroki (select Excalidraw
 explicitly when needed), paged work to Typst, vectors to SVG/resvg, and raster
 preparation to Sharp. Encoded video needs separately selected host tooling.

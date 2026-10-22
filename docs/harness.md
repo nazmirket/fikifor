@@ -1,8 +1,9 @@
 # Mirket adoption and maintenance
 
-Fikifor uses [Mirket 0.0.1](https://github.com/codemirket/harness/releases/tag/mirket-v0.0.1),
-published 2026-10-21T14:34:24Z. This is a fresh baseline: registrations,
-Mem0 facts and worker checkpoints from earlier releases are not imported.
+Fikifor uses [Mirket 0.0.2](https://github.com/codemirket/harness/releases/tag/mirket-v0.0.2),
+published 2026-10-22T09:36:12Z. Existing 0.0.1 registrations, facts and
+checkpoints are preserved; their execution compatibility bindings remain enforced.
+The fresh-start boundary excludes pre-0.0.1 state.
 `scripts/mirket-release.json` records the official release manifest digest,
 platform asset digests, and source/catalog fingerprints reported by the verified
 binary. Hashes establish transfer identity, not publisher authentication or
@@ -31,11 +32,18 @@ under `~/.mirket`, not in this repository.
 
 ## Install and select
 
-Follow the [official fresh-install guide](https://github.com/codemirket/harness/blob/main/docs/agent-installation.md).
-Verify the chosen 0.0.1 asset against the release manifest before execution.
+Follow the [official fresh-install guide](https://github.com/codemirket/harness/blob/mirket-v0.0.2/docs/agent-installation.md).
+Verify the chosen 0.0.2 asset against the release manifest before execution.
 The managed executable is `~/.mirket/bin/mirket`; setup owns installed skills
 and host MCP definitions. The supported targets here are Codex and Claude.
 Preserve existing optional package selections when repeating setup.
+
+All registered projects share the per-user installed executable. Compare its
+source identity before any repair; coordinate release pins rather than restoring
+an older project pin over a newer global installation. Use `mirket update --plan`
+to inspect a verified candidate and `mirket update --activate` for an authorized
+upgrade that preserves saved selections and restores previously running groups.
+Then verify `runtime_status` through each actual client connection.
 
 Inspect all pages of `mirket project list --json` before registration. For a new
 project without `.mirket/project.json`, run:
@@ -95,8 +103,14 @@ After interruption, inspect `workflow_status` before resuming a worker. Do not
 copy old state or replay an uncertain effect.
 
 For a concrete visual deliverable, use the installed `interface-design` guidance.
-Freeze a target, compile Style Dictionary tokens before rendering, and inspect
-saved output. Use browser inspection for live UI, OpenPencil for compatible
+Freeze a target and inspect saved output.
+Compile tokens for dependent production and reference their outputs in authored
+source. Observational captures and saved-file exports preserve existing sources
+without injecting or requiring tokens. Odiff reports completed comparisons and
+whether pixels match separately; request `expect_match: true` when equality is
+an acceptance requirement. Inspect applicable design axes and record why any
+axis is irrelevant; keep all affected application gates.
+Use browser inspection for live UI, OpenPencil for compatible
 editable `.fig`/`.pen` files, Kroki for diagrams with Excalidraw explicitly
 selected when needed, Typst for paged work, SVG/resvg for vectors and Sharp for
 raster work. The existing `apps/web/public/brand.pxd` is a different ZIP-based
