@@ -29,9 +29,8 @@ coverage
 apps/api/files/*
 !apps/api/files/.gitkeep
 
-# Local agent state (managed project skills remain versioned)
+# Preserve local recovery evidence without committing it
 .mirket/project.lock
-.claude/settings.local.json
 .codex/
 
 # Browser test output

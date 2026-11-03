@@ -13,8 +13,8 @@
 		"dev:web": "pnpm --filter @fikifor/web dev",
 		"build": "pnpm -r build",
 		"lint": "pnpm -r lint && eslint scripts playwright.config.ts --max-warnings=0 && pnpm format:check",
-		"format": "prettier --write \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs playwright.config.ts \".github/workflows/*.yml\" \"deploy/*.{yml,md}\" docker-compose.yml \"scripts/*.{mjs,json}\" AGENTS.md README.MD docs/harness.md",
-		"format:check": "prettier --check \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs playwright.config.ts \".github/workflows/*.yml\" \"deploy/*.{yml,md}\" docker-compose.yml \"scripts/*.{mjs,json}\" AGENTS.md README.MD docs/harness.md",
+		"format": "prettier --write \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs playwright.config.ts \".github/workflows/*.yml\" \"deploy/*.{yml,md}\" docker-compose.yml \"scripts/*.{mjs,json}\" AGENTS.md README.MD",
+		"format:check": "prettier --check \"{apps,packages}/**/*.{ts,vue,json}\" package.json pnpm-workspace.yaml eslint.config.mjs playwright.config.ts \".github/workflows/*.yml\" \"deploy/*.{yml,md}\" docker-compose.yml \"scripts/*.{mjs,json}\" AGENTS.md README.MD",
 		"test": "pnpm -r test",
 		"test:e2e": "playwright test",
 		"verify:isolated": "node scripts/verify-isolated.mjs",
@@ -25,9 +25,7 @@
 		"deploy:check": "sh scripts/check-deploy-images.sh",
 		"podman:up": "podman compose up -d --build",
 		"podman:down": "podman compose down",
-		"podman:logs": "podman compose logs -f",
-		"agents:check": "mirket project doctor --project . && node --test scripts/harness.node.mjs",
-		"agents:runtime": "node scripts/harness-runtime.mjs"
+		"podman:logs": "podman compose logs -f"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
