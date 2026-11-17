@@ -29,10 +29,6 @@ coverage
 apps/api/files/*
 !apps/api/files/.gitkeep
 
-# Preserve local recovery evidence without committing it
-.mirket/project.lock
-.codex/
-
 # Browser test output
 playwright-report/
 test-results/

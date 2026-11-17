@@ -145,8 +145,5 @@ Use [GitHub Issues](https://github.com/nazmirket/fikifor/issues) for reproducibl
 bugs and focused feature proposals. Include the steps, expected behavior, and
 relevant environment details when reporting a problem.
 
-For agent-assisted development, [AGENTS.md](AGENTS.md) defines the Fikifor
-boundaries and checks for Mirket on Pi Durable. Start the installed Mirket
-launcher from this repository and use only capabilities selected in that session.
-The application checks above remain the verification gates; a passing CI run
-alone does not verify an agent session or an external effect.
+See the [project guidance](AGENTS.md) for architecture constraints and required
+verification.
